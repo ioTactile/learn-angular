@@ -1,97 +1,89 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+  ],
   template: `
     <section class="auth">
-      <h1>Connexion</h1>
-      <p class="lede">Habit Tracker — entre avec ton compte.</p>
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Connexion</mat-card-title>
+          <mat-card-subtitle>Habit Tracker — entre avec ton compte.</mat-card-subtitle>
+        </mat-card-header>
 
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <label>
-          Email
-          <input type="email" formControlName="email" autocomplete="email" />
-        </label>
-        <label>
-          Mot de passe
-          <input type="password" formControlName="password" autocomplete="current-password" />
-        </label>
+        <mat-card-content>
+          <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="email" autocomplete="email" />
+            </mat-form-field>
 
-        @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
-        }
+            <mat-form-field appearance="outline">
+              <mat-label>Mot de passe</mat-label>
+              <input
+                matInput
+                type="password"
+                formControlName="password"
+                autocomplete="current-password"
+              />
+            </mat-form-field>
 
-        <button type="submit" [disabled]="form.invalid || loading()">
-          {{ loading() ? 'Connexion…' : 'Se connecter' }}
-        </button>
-      </form>
+            @if (error()) {
+              <p class="error" role="alert">{{ error() }}</p>
+            }
 
-      <p class="switch">
-        Pas de compte ?
-        <a routerLink="/register">Créer un compte</a>
-      </p>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="form.invalid || loading()"
+            >
+              {{ loading() ? 'Connexion…' : 'Se connecter' }}
+            </button>
+          </form>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <a mat-button routerLink="/register">Créer un compte</a>
+        </mat-card-actions>
+      </mat-card>
     </section>
   `,
   styles: `
     .auth {
-      max-width: 24rem;
+      max-width: 26rem;
       margin: 4rem auto;
       padding: 0 1rem;
     }
-    h1 {
-      margin: 0 0 0.35rem;
-      font-size: 1.75rem;
-    }
-    .lede {
-      margin: 0 0 1.5rem;
-      color: var(--muted);
-    }
-    form {
+
+    .form {
       display: grid;
-      gap: 1rem;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
     }
-    label {
-      display: grid;
-      gap: 0.35rem;
-      font-size: 0.9rem;
+
+    mat-form-field {
+      width: 100%;
     }
-    input {
-      padding: 0.65rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 0.4rem;
-      background: var(--surface);
-      color: inherit;
-      font: inherit;
-    }
-    button {
-      margin-top: 0.25rem;
-      padding: 0.7rem 1rem;
-      border: 0;
-      border-radius: 0.4rem;
-      background: var(--accent);
-      color: #fff;
-      font: inherit;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
+
     .error {
       margin: 0;
-      color: var(--danger);
+      color: var(--mat-sys-error);
       font-size: 0.9rem;
-    }
-    .switch {
-      margin-top: 1.25rem;
-      color: var(--muted);
-    }
-    a {
-      color: var(--accent);
     }
   `,
 })

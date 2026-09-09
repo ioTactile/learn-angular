@@ -1,5 +1,14 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { Habit } from './habit.models';
@@ -7,25 +16,46 @@ import { HabitService } from './habit.service';
 
 @Component({
   selector: 'app-habits-page',
-  imports: [ReactiveFormsModule],
+  imports: [
+    ReactiveFormsModule,
+    MatToolbarModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatListModule,
+    MatCardModule,
+    MatChipsModule,
+    MatProgressSpinnerModule,
+  ],
   template: `
+    <mat-toolbar color="primary" class="toolbar">
+      <span class="brand">Habit Tracker</span>
+      <span class="spacer"></span>
+      <button mat-button type="button" (click)="logout()">Déconnexion</button>
+    </mat-toolbar>
+
     <section class="page">
-      <header class="top">
-        <div>
-          <p class="brand">Habit Tracker</p>
-          <h1>Mes habitudes</h1>
-        </div>
-        <button type="button" class="ghost" (click)="logout()">Déconnexion</button>
-      </header>
+      <h1>Mes habitudes</h1>
 
       <form class="create" [formGroup]="form" (ngSubmit)="create()">
-        <input
-          type="text"
-          formControlName="title"
-          placeholder="Nouvelle habitude…"
-          maxlength="120"
-        />
-        <button type="submit" [disabled]="form.invalid || creating()">Ajouter</button>
+        <mat-form-field appearance="outline" class="title-field">
+          <mat-label>Nouvelle habitude</mat-label>
+          <input
+            matInput
+            formControlName="title"
+            placeholder="Nouvelle habitude…"
+            maxlength="120"
+          />
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="form.invalid || creating()"
+        >
+          Ajouter
+        </button>
       </form>
 
       @if (error()) {
@@ -33,123 +63,106 @@ import { HabitService } from './habit.service';
       }
 
       @if (loading()) {
-        <p class="muted">Chargement…</p>
+        <div class="loading">
+          <mat-spinner diameter="36"></mat-spinner>
+          <p>Chargement…</p>
+        </div>
       } @else if (habits().length === 0) {
-        <p class="muted">Aucune habitude pour l’instant. Ajoutes-en une.</p>
+        <mat-card>
+          <mat-card-content>
+            <p class="empty">Aucune habitude pour l’instant. Ajoutes-en une.</p>
+          </mat-card-content>
+        </mat-card>
       } @else {
-        <ul class="list">
-          @for (habit of habits(); track habit.id) {
-            <li>
-              <div class="info">
-                <strong>{{ habit.title }}</strong>
-                <span class="streak">streak {{ habit.streak }}</span>
-              </div>
-              <div class="actions">
-                <button type="button" (click)="complete(habit)">Compléter</button>
-                <button type="button" class="danger" (click)="remove(habit)">Supprimer</button>
-              </div>
-            </li>
-          }
-        </ul>
+        <mat-card>
+          <mat-list>
+            @for (habit of habits(); track habit.id) {
+              <mat-list-item>
+                <span matListItemTitle>{{ habit.title }}</span>
+                <span matListItemLine>
+                  <mat-chip-set>
+                    <mat-chip>streak {{ habit.streak }}</mat-chip>
+                  </mat-chip-set>
+                </span>
+                <div matListItemMeta class="actions">
+                  <button mat-stroked-button type="button" (click)="complete(habit)">
+                    Compléter
+                  </button>
+                  <button mat-button color="warn" type="button" (click)="remove(habit)">
+                    Supprimer
+                  </button>
+                </div>
+              </mat-list-item>
+            }
+          </mat-list>
+        </mat-card>
       }
     </section>
   `,
   styles: `
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .brand {
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
     .page {
-      max-width: 40rem;
-      margin: 2.5rem auto;
+      max-width: 44rem;
+      margin: 1.5rem auto;
       padding: 0 1rem 3rem;
     }
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .brand {
-      margin: 0;
-      font-size: 0.8rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
+
     h1 {
-      margin: 0.2rem 0 0;
-      font-size: 1.85rem;
+      margin: 0 0 1rem;
+      font: var(--mat-sys-headline-small);
     }
+
     .create {
       display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
-    .create input {
-      flex: 1;
-      padding: 0.7rem 0.8rem;
-      border: 1px solid var(--border);
-      border-radius: 0.4rem;
-      background: var(--surface);
-      color: inherit;
-      font: inherit;
-    }
-    button {
-      padding: 0.65rem 0.9rem;
-      border: 0;
-      border-radius: 0.4rem;
-      background: var(--accent);
-      color: #fff;
-      font: inherit;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-    .ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-    .danger {
-      background: transparent;
-      color: var(--danger);
-      border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
-    }
-    .list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
       gap: 0.75rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
     }
-    li {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      align-items: center;
-      padding: 0.9rem 1rem;
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      background: var(--surface);
+
+    .title-field {
+      flex: 1;
     }
-    .info {
-      display: grid;
-      gap: 0.2rem;
-    }
-    .streak {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
+
     .actions {
       display: flex;
       gap: 0.4rem;
-      flex-shrink: 0;
+      align-items: center;
     }
-    .muted {
-      color: var(--muted);
+
+    .loading {
+      display: grid;
+      justify-items: center;
+      gap: 0.75rem;
+      padding: 2rem 0;
+      color: var(--mat-sys-on-surface-variant);
     }
+
+    .empty {
+      margin: 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
     .error {
-      color: var(--danger);
+      color: var(--mat-sys-error);
+    }
+
+    mat-list-item {
+      height: auto !important;
+      min-height: 4.5rem;
     }
   `,
 })
@@ -189,7 +202,7 @@ export class HabitsPage implements OnInit {
       },
       error: () => {
         this.creating.set(false);
-        this.error.set("Création impossible.");
+        this.error.set('Création impossible.');
       },
     });
   }

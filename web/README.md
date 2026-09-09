@@ -1,6 +1,6 @@
 # Habit Tracker — Angular
 
-Front Angular 21 (standalone, signals, Vitest) branché sur l'API Spring.
+Front Angular 21 (standalone, signals, Vitest, **Angular Material**) branché sur l'API Spring.
 
 ## Mapping mental (React / Vue → Angular)
 
@@ -31,6 +31,17 @@ npm test -- --watch=false
 ```
 
 Couvre notamment `AuthService` et `HabitService` avec `HttpTestingController`.
+
+## Angular Material
+
+Installé via `ng add @angular/material` :
+
+- Thème M3 : `src/material-theme.scss` (palette azure)
+- Animations : `provideAnimationsAsync()` dans `app.config.ts`
+- UI Material sur `/login`, `/register`, `/habits`
+  (`mat-card`, `mat-toolbar`, `mat-list`, `mat-chip`, `mat-spinner`…)
+
+Doc : https://material.angular.dev
 
 ## Routes
 

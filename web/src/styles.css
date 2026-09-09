@@ -1,30 +1,5 @@
-:root {
-  color-scheme: light;
-  --bg: #f3efe6;
-  --surface: #fffdf8;
-  --text: #1c1914;
-  --muted: #6b6458;
-  --border: #d9d0c2;
-  --accent: #0f6a5a;
-  --danger: #a33b2b;
-  font-family: "Segoe UI", "IBM Plex Sans", system-ui, sans-serif;
-  line-height: 1.45;
-  background:
-    radial-gradient(circle at top left, #e7f2ee 0%, transparent 42%),
-    linear-gradient(180deg, #f7f3ea 0%, var(--bg) 100%);
-  color: var(--text);
-}
+/* Styles globaux légers — le thème Material est dans material-theme.scss */
 
 * {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-}
-
-button,
-input {
-  font: inherit;
 }
