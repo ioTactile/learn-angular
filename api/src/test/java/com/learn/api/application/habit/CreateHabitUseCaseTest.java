@@ -1,0 +1,45 @@
+package com.learn.api.application.habit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.learn.api.domain.habit.Habit;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class CreateHabitUseCaseTest {
+
+	@Mock
+	HabitRepository habits;
+
+	CreateHabitUseCase useCase;
+
+	@BeforeEach
+	void setUp() {
+		useCase = new CreateHabitUseCase(habits);
+	}
+
+	@Test
+	@DisplayName("crée un habit rattaché au owner et trim le titre")
+	void execute_savesHabitForOwner() {
+		UUID ownerId = UUID.randomUUID();
+		when(habits.save(any(Habit.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		Habit created = useCase.execute(new CreateHabitCommand(ownerId, "  Drink water  "));
+
+		ArgumentCaptor<Habit> captor = ArgumentCaptor.forClass(Habit.class);
+		verify(habits).save(captor.capture());
+		assertThat(captor.getValue().ownerId()).isEqualTo(ownerId);
+		assertThat(captor.getValue().title()).isEqualTo("Drink water");
+		assertThat(created.title()).isEqualTo("Drink water");
+	}
+}
