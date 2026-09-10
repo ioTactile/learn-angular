@@ -38,10 +38,16 @@ api/             controllers, DTOs, exception handlers
 
 ## Auth
 
-- `POST /api/auth/register` → `201` + JWT access + refresh
+- `POST /api/auth/register` → `201` + JWT access + refresh (rôle `USER`)
 - `POST /api/auth/login` → `200` + JWT access + refresh (ou `401`)
 - `POST /api/auth/refresh` `{ "refreshToken" }` → nouveaux tokens
-- `GET /api/me` (Bearer requis) → `{ id, email }`
+- `GET /api/me` (Bearer) → `{ id, email, role }`
+- `GET /api/admin/users` (Bearer + rôle `ADMIN`) → liste utilisateurs
+
+## OpenAPI
+
+Swagger UI : http://localhost:8080/swagger-ui.html  
+Contrat JSON : http://localhost:8080/v3/api-docs
 
 ## Habits (Bearer requis)
 

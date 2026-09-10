@@ -13,6 +13,7 @@ Front Angular 21 (standalone, signals, Vitest, **Angular Material**) branché su
 | `CanActivateFn` | Next middleware / Nuxt middleware |
 | Reactive Forms | RHF / VeeValidate |
 | `@for` / `@if` | `.map` / `v-if` |
+| `signalStore` (`@ngrx/signals`) | Zustand / Pinia |
 
 ## Lancer
 
@@ -46,4 +47,5 @@ Doc : https://material.angular.dev
 ## Routes
 
 - `/login`, `/register` (guest)
-- `/habits` (auth guard) — créer / compléter / supprimer
+- `/habits` (auth guard) — créer / compléter / supprimer (confirm dialog)
+- `/admin` (admin guard) — liste des utilisateurs

@@ -2,6 +2,7 @@ package com.learn.api.infrastructure.persistence;
 
 import com.learn.api.application.auth.UserRepository;
 import com.learn.api.domain.user.User;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -29,6 +30,7 @@ class JpaUserRepository implements UserRepository {
 				user.id(),
 				user.email(),
 				user.passwordHash(),
+				user.role(),
 				user.createdAt()
 		);
 		UserJpaEntity saved = jpa.save(entity);
@@ -45,7 +47,18 @@ class JpaUserRepository implements UserRepository {
 		return jpa.findById(id).map(this::toDomain);
 	}
 
+	@Override
+	public List<User> findAll() {
+		return jpa.findAll().stream().map(this::toDomain).toList();
+	}
+
 	private User toDomain(UserJpaEntity entity) {
-		return new User(entity.getId(), entity.getEmail(), entity.getPasswordHash(), entity.getCreatedAt());
+		return new User(
+				entity.getId(),
+				entity.getEmail(),
+				entity.getPasswordHash(),
+				entity.getRole(),
+				entity.getCreatedAt()
+		);
 	}
 }

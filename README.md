@@ -9,8 +9,8 @@ Projet de formation full-stack avec **TDD**, clean architecture, et auth dès le
 | Build backend | Maven (+ wrapper `./mvnw`) |
 | Runtime | Java 21, Spring Boot 4 |
 | DB | PostgreSQL 16 (Testcontainers en test, Docker Compose en local) |
-| Auth | JWT access (15 min) + refresh opaque (7 j) + BCrypt |
-| Frontend | Angular 21 standalone + signals + Material + Vitest |
+| Auth | JWT access (15 min) + refresh opaque (7 j) + BCrypt + rôles USER/ADMIN |
+| Frontend | Angular 21 standalone + signals + Material + NgRx SignalStore + Vitest |
 
 ## Structure
 
@@ -49,10 +49,13 @@ GitHub Actions (`.github/workflows/ci.yml`) :
 
 Auth :
 
-- `POST /api/auth/register` → access + refresh
+- `POST /api/auth/register` → access + refresh (rôle USER)
 - `POST /api/auth/login` → access + refresh
 - `POST /api/auth/refresh` → rotation des tokens
-- `GET /api/me` (Bearer)
+- `GET /api/me` (Bearer) → `{ id, email, role }`
+- `GET /api/admin/users` (ADMIN) → liste des comptes
+
+OpenAPI / Swagger UI : `http://localhost:8080/swagger-ui.html`
 
 Habits (Bearer) :
 

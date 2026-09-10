@@ -15,76 +15,50 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
-class LoginUserIT {
+class AdminAccessIT {
 
 	@Autowired
 	MockMvc mockMvc;
 
-	@Test
-	@DisplayName("POST /api/auth/login renvoie un JWT pour des identifiants valides")
-	void login_withValidCredentials_returnsToken() throws Exception {
-		register("carol@example.com", "Secret123!");
+	@Autowired
+	JdbcTemplate jdbc;
 
-		mockMvc.perform(post("/api/auth/login")
+	@Test
+	@DisplayName("USER → 403 sur /api/admin/users ; ADMIN → 200")
+	void adminUsers_requiresAdminRole() throws Exception {
+		String userToken = registerAndGetToken("user-role@example.com", "Secret123!");
+
+		mockMvc.perform(get("/api/admin/users")
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+				.andExpect(status().isForbidden());
+
+		jdbc.update("UPDATE users SET role = 'ADMIN' WHERE email = ?", "user-role@example.com");
+
+		MvcResult login = mockMvc.perform(post("/api/auth/login")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
-								  "email": "carol@example.com",
+								  "email": "user-role@example.com",
 								  "password": "Secret123!"
 								}
 								"""))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.accessToken").isString())
-				.andExpect(jsonPath("$.tokenType").value("Bearer"));
-	}
+				.andReturn();
 
-	@Test
-	@DisplayName("POST /api/auth/login refuse un mauvais mot de passe avec 401")
-	void login_withWrongPassword_returnsUnauthorized() throws Exception {
-		register("dave@example.com", "Secret123!");
+		String adminToken = JsonPath.read(login.getResponse().getContentAsString(), "$.accessToken");
 
-		mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
-								{
-								  "email": "dave@example.com",
-								  "password": "WrongPass1"
-								}
-								"""))
-				.andExpect(status().isUnauthorized());
-	}
-
-	@Test
-	@DisplayName("GET /api/me sans token → 401 ; avec Bearer → 200")
-	void me_requiresBearerToken() throws Exception {
-		String token = registerAndGetToken("erin@example.com", "Secret123!");
-
-		mockMvc.perform(get("/api/me"))
-				.andExpect(status().isUnauthorized());
-
-		mockMvc.perform(get("/api/me")
-						.header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+		mockMvc.perform(get("/api/admin/users")
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value("erin@example.com"))
-				.andExpect(jsonPath("$.role").value("USER"));
-	}
-
-	private void register(String email, String password) throws Exception {
-		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
-								{
-								  "email": "%s",
-								  "password": "%s"
-								}
-								""".formatted(email, password)))
-				.andExpect(status().isCreated());
+				.andExpect(jsonPath("$[0].email").value("user-role@example.com"))
+				.andExpect(jsonPath("$[0].role").value("ADMIN"));
 	}
 
 	private String registerAndGetToken(String email, String password) throws Exception {

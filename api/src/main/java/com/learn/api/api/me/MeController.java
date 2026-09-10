@@ -30,6 +30,6 @@ public class MeController {
 		User user = users.findById(userId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
-		return new MeResponse(user.id().toString(), user.email());
+		return new MeResponse(user.id().toString(), user.email(), user.role().name());
 	}
 }

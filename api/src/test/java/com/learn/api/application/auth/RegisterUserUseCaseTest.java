@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.learn.api.domain.user.EmailAlreadyRegisteredException;
 import com.learn.api.domain.user.User;
+import com.learn.api.domain.user.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,7 @@ class RegisterUserUseCaseTest {
 		verify(users).save(captor.capture());
 		assertThat(captor.getValue().email()).isEqualTo("alice@example.com");
 		assertThat(captor.getValue().passwordHash()).isEqualTo("hashed");
+		assertThat(captor.getValue().role()).isEqualTo(UserRole.USER);
 	}
 
 	@Test

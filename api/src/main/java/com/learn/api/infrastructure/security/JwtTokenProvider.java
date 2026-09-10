@@ -24,13 +24,14 @@ public class JwtTokenProvider implements TokenProvider, JwtSettings {
 	}
 
 	@Override
-	public String issueAccessToken(UUID userId, String email) {
+	public String issueAccessToken(UUID userId, String email, String role) {
 		Instant now = Instant.now();
 		Instant expires = now.plusSeconds(properties.expirationMinutes() * 60);
 
 		return Jwts.builder()
 				.subject(userId.toString())
 				.claim("email", email)
+				.claim("role", role)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(expires))
 				.signWith(key)

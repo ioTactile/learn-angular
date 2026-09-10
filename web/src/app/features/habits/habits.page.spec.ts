@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { ConfirmDialogService } from '../../core/ui/confirm-dialog.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { Habit } from './habit.models';
 import { HabitService } from './habit.service';
@@ -28,16 +29,26 @@ describe('HabitsPage', () => {
   });
 
   const toast = { success: vi.fn(), error: vi.fn() };
+  const confirm = { confirm: vi.fn().mockReturnValue(of(true)) };
 
   const providers = (habitsApi: object) => [
     { provide: HabitService, useValue: habitsApi },
-    { provide: AuthService, useValue: { logout: vi.fn() } },
+    {
+      provide: AuthService,
+      useValue: {
+        logout: vi.fn(),
+        isAdmin: () => false,
+        currentUser: () => null,
+      },
+    },
     { provide: Router, useValue: { navigateByUrl: vi.fn() } },
     { provide: ToastService, useValue: toast },
+    { provide: ConfirmDialogService, useValue: confirm },
   ];
 
   beforeEach(() => {
     vi.clearAllMocks();
+    confirm.confirm.mockReturnValue(of(true));
   });
 
   it('affiche les habitudes chargées puis permet de créer une habitude', async () => {
@@ -116,13 +127,10 @@ describe('HabitsPage', () => {
     expect(await screen.findByText('streak 1')).toBeTruthy();
   });
 
-  it('supprime une habitude de la liste', async () => {
+  it('demande confirmation avant suppression optimiste', async () => {
     const user = userEvent.setup();
     const remove = vi.fn().mockReturnValue(of(void 0));
-    const list = vi
-      .fn()
-      .mockReturnValueOnce(of(pageOf(initialHabits)))
-      .mockReturnValueOnce(of(pageOf([])));
+    const list = vi.fn().mockReturnValue(of(pageOf(initialHabits)));
 
     await render(HabitsPage, {
       providers: providers({
@@ -136,8 +144,31 @@ describe('HabitsPage', () => {
     await screen.findByText('Drink water');
     await user.click(screen.getByRole('button', { name: 'Supprimer' }));
 
+    expect(confirm.confirm).toHaveBeenCalled();
     expect(remove).toHaveBeenCalledWith('h1');
     expect(toast.success).toHaveBeenCalledWith('Habitude supprimée');
+    expect(list).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(/Aucune habitude/)).toBeTruthy();
+  });
+
+  it('n’appelle pas delete si confirmation annulée', async () => {
+    confirm.confirm.mockReturnValue(of(false));
+    const user = userEvent.setup();
+    const remove = vi.fn();
+
+    await render(HabitsPage, {
+      providers: providers({
+        list: vi.fn().mockReturnValue(of(pageOf(initialHabits))),
+        create: vi.fn(),
+        complete: vi.fn(),
+        delete: remove,
+      }),
+    });
+
+    await screen.findByText('Drink water');
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
+
+    expect(confirm.confirm).toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
   });
 });

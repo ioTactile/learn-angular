@@ -11,9 +11,16 @@ public record User(
 		UUID id,
 		String email,
 		String passwordHash,
+		UserRole role,
 		Instant createdAt
 ) {
 	public static User create(String email, String passwordHash) {
-		return new User(UUID.randomUUID(), email.trim().toLowerCase(), passwordHash, Instant.now());
+		return new User(
+				UUID.randomUUID(),
+				email.trim().toLowerCase(),
+				passwordHash,
+				UserRole.USER,
+				Instant.now()
+		);
 	}
 }

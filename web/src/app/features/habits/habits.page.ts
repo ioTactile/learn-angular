@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,17 +9,19 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
-import { ToastService } from '../../core/ui/toast.service';
+import { ConfirmDialogService } from '../../core/ui/confirm-dialog.service';
 import { Habit } from './habit.models';
-import { HabitService } from './habit.service';
+import { HabitStore } from './habit.store';
 
 @Component({
   selector: 'app-habits-page',
+  providers: [HabitStore],
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MatToolbarModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -33,6 +35,9 @@ import { HabitService } from './habit.service';
     <mat-toolbar color="primary" class="toolbar">
       <span class="brand">Habit Tracker</span>
       <span class="spacer"></span>
+      @if (auth.isAdmin()) {
+        <a mat-button routerLink="/admin">Admin</a>
+      }
       <button mat-button type="button" (click)="logout()">Déconnexion</button>
     </mat-toolbar>
 
@@ -53,7 +58,7 @@ import { HabitService } from './habit.service';
           mat-flat-button
           color="primary"
           type="submit"
-          [disabled]="form.invalid || creating()"
+          [disabled]="form.invalid || store.creating()"
         >
           Ajouter
         </button>
@@ -64,15 +69,15 @@ import { HabitService } from './habit.service';
         <input matInput [formControl]="filterControl" placeholder="Rechercher…" />
       </mat-form-field>
 
-      @if (loading()) {
+      @if (store.loading()) {
         <div class="loading">
           <mat-spinner diameter="36"></mat-spinner>
           <p>Chargement…</p>
         </div>
-      } @else if (habits().length === 0) {
+      } @else if (store.habits().length === 0) {
         <p class="empty">Aucune habitude pour l’instant. Ajoutes-en une.</p>
       } @else {
-        <table mat-table [dataSource]="habits()" class="habits-table">
+        <table mat-table [dataSource]="store.habits()" class="habits-table">
           <ng-container matColumnDef="title">
             <th mat-header-cell *matHeaderCellDef>Titre</th>
             <td mat-cell *matCellDef="let habit">{{ habit.title }}</td>
@@ -98,9 +103,9 @@ import { HabitService } from './habit.service';
         </table>
 
         <mat-paginator
-          [length]="totalElements()"
-          [pageIndex]="pageIndex()"
-          [pageSize]="pageSize()"
+          [length]="store.totalElements()"
+          [pageIndex]="store.pageIndex()"
+          [pageSize]="store.pageSize()"
           [pageSizeOptions]="[5, 10, 20]"
           (page)="onPage($event)"
         />
@@ -168,21 +173,14 @@ import { HabitService } from './habit.service';
   `,
 })
 export class HabitsPage implements OnInit {
-  private readonly habitsApi = inject(HabitService);
-  private readonly auth = inject(AuthService);
-  private readonly toast = inject(ToastService);
+  readonly store = inject(HabitStore);
+  readonly auth = inject(AuthService);
+  private readonly confirm = inject(ConfirmDialogService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly displayedColumns = ['title', 'streak', 'actions'];
-  readonly habits = signal<Habit[]>([]);
-  readonly loading = signal(true);
-  readonly creating = signal(false);
-  readonly filter = signal('');
-  readonly pageIndex = signal(0);
-  readonly pageSize = signal(10);
-  readonly totalElements = signal(0);
 
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(120)]],
@@ -193,19 +191,13 @@ export class HabitsPage implements OnInit {
   ngOnInit(): void {
     this.filterControl.valueChanges
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        this.filter.set(value);
-        this.pageIndex.set(0);
-        this.reload();
-      });
+      .subscribe((value) => this.store.setFilter(value));
 
-    this.reload();
+    this.store.load();
   }
 
   onPage(event: PageEvent): void {
-    this.pageIndex.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
-    this.reload();
+    this.store.setPage(event.pageIndex, event.pageSize);
   }
 
   create(): void {
@@ -213,67 +205,30 @@ export class HabitsPage implements OnInit {
       return;
     }
 
-    this.creating.set(true);
     const title = this.form.controls.title.value.trim();
-
-    this.habitsApi.create({ title }).subscribe({
-      next: () => {
-        this.form.reset();
-        this.creating.set(false);
-        this.pageIndex.set(0);
-        this.toast.success('Habitude ajoutée');
-        this.reload();
-      },
-      error: () => {
-        this.creating.set(false);
-        this.toast.error('Création impossible.');
-      },
-    });
+    this.store.create(title, () => this.form.reset());
   }
 
   complete(habit: Habit): void {
-    this.habitsApi.complete(habit.id).subscribe({
-      next: (updated) => {
-        this.habits.update((list) => list.map((h) => (h.id === updated.id ? updated : h)));
-        this.toast.success(`Complétée — streak ${updated.streak}`);
-      },
-      error: () => this.toast.error('Completion impossible.'),
-    });
+    this.store.complete(habit);
   }
 
   remove(habit: Habit): void {
-    this.habitsApi.delete(habit.id).subscribe({
-      next: () => {
-        this.toast.success('Habitude supprimée');
-        this.reload();
-      },
-      error: () => this.toast.error('Suppression impossible.'),
-    });
+    this.confirm
+      .confirm({
+        title: 'Supprimer l’habitude ?',
+        message: `« ${habit.title} » sera définitivement supprimée.`,
+        confirmLabel: 'Supprimer',
+      })
+      .subscribe((ok) => {
+        if (ok) {
+          this.store.remove(habit);
+        }
+      });
   }
 
   logout(): void {
     this.auth.logout();
     void this.router.navigateByUrl('/login');
-  }
-
-  private reload(): void {
-    this.loading.set(true);
-    this.habitsApi
-      .list({
-        page: this.pageIndex(),
-        size: this.pageSize(),
-        q: this.filter(),
-      })
-      .subscribe({
-        next: (page) => {
-          this.habits.set(page.content);
-          this.totalElements.set(page.totalElements);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.loading.set(false);
-          this.toast.error('Impossible de charger les habitudes.');
-        },
-      });
   }
 }

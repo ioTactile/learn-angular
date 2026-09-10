@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.learn.api.domain.user.InvalidCredentialsException;
 import com.learn.api.domain.user.User;
+import com.learn.api.domain.user.UserRole;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,7 +41,7 @@ class LoginUserUseCaseTest {
 	@DisplayName("login valide ouvre une session Bearer")
 	void execute_withValidCredentials_returnsToken() {
 		UUID id = UUID.randomUUID();
-		User user = new User(id, "alice@example.com", "hashed", Instant.now());
+		User user = new User(id, "alice@example.com", "hashed", UserRole.USER, Instant.now());
 
 		when(users.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
 		when(passwordHasher.matches("Secret123!", "hashed")).thenReturn(true);
@@ -67,7 +68,7 @@ class LoginUserUseCaseTest {
 	@Test
 	@DisplayName("mauvais mot de passe → InvalidCredentials")
 	void execute_whenPasswordWrong_throwsInvalidCredentials() {
-		User user = new User(UUID.randomUUID(), "alice@example.com", "hashed", Instant.now());
+		User user = new User(UUID.randomUUID(), "alice@example.com", "hashed", UserRole.USER, Instant.now());
 		when(users.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
 		when(passwordHasher.matches("wrong-password", "hashed")).thenReturn(false);
 
