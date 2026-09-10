@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../core/ui/toast.service';
 import { Habit } from './habit.models';
 import { HabitService } from './habit.service';
 import { HabitsPage } from './habits.page';
@@ -18,9 +19,30 @@ describe('HabitsPage', () => {
     },
   ];
 
+  const pageOf = (content: Habit[]) => ({
+    content,
+    page: 0,
+    size: 10,
+    totalElements: content.length,
+    totalPages: 1,
+  });
+
+  const toast = { success: vi.fn(), error: vi.fn() };
+
+  const providers = (habitsApi: object) => [
+    { provide: HabitService, useValue: habitsApi },
+    { provide: AuthService, useValue: { logout: vi.fn() } },
+    { provide: Router, useValue: { navigateByUrl: vi.fn() } },
+    { provide: ToastService, useValue: toast },
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('affiche les habitudes chargées puis permet de créer une habitude', async () => {
     const user = userEvent.setup();
-    const list = vi.fn().mockReturnValue(of(initialHabits));
+    const list = vi.fn().mockReturnValue(of(pageOf(initialHabits)));
     const create = vi.fn().mockReturnValue(
       of({
         id: 'h2',
@@ -31,26 +53,30 @@ describe('HabitsPage', () => {
       }),
     );
 
+    list
+      .mockReturnValueOnce(of(pageOf(initialHabits)))
+      .mockReturnValueOnce(
+        of(
+          pageOf([
+            {
+              id: 'h2',
+              title: 'Read 10 pages',
+              createdAt: '2026-09-09T11:00:00Z',
+              streak: 0,
+              lastCompletedOn: null,
+            },
+            ...initialHabits,
+          ]),
+        ),
+      );
+
     await render(HabitsPage, {
-      providers: [
-        {
-          provide: HabitService,
-          useValue: {
-            list,
-            create,
-            complete: vi.fn(),
-            delete: vi.fn(),
-          },
-        },
-        {
-          provide: AuthService,
-          useValue: { logout: vi.fn() },
-        },
-        {
-          provide: Router,
-          useValue: { navigateByUrl: vi.fn() },
-        },
-      ],
+      providers: providers({
+        list,
+        create,
+        complete: vi.fn(),
+        delete: vi.fn(),
+      }),
     });
 
     expect(await screen.findByText('Drink water')).toBeTruthy();
@@ -59,6 +85,7 @@ describe('HabitsPage', () => {
     await user.click(screen.getByRole('button', { name: 'Ajouter' }));
 
     expect(create).toHaveBeenCalledWith({ title: 'Read 10 pages' });
+    expect(toast.success).toHaveBeenCalledWith('Habitude ajoutée');
     expect(await screen.findByText('Read 10 pages')).toBeTruthy();
   });
 
@@ -73,64 +100,44 @@ describe('HabitsPage', () => {
     );
 
     await render(HabitsPage, {
-      providers: [
-        {
-          provide: HabitService,
-          useValue: {
-            list: vi.fn().mockReturnValue(of(initialHabits)),
-            create: vi.fn(),
-            complete,
-            delete: vi.fn(),
-          },
-        },
-        {
-          provide: AuthService,
-          useValue: { logout: vi.fn() },
-        },
-        {
-          provide: Router,
-          useValue: { navigateByUrl: vi.fn() },
-        },
-      ],
+      providers: providers({
+        list: vi.fn().mockReturnValue(of(pageOf(initialHabits))),
+        create: vi.fn(),
+        complete,
+        delete: vi.fn(),
+      }),
     });
 
     await screen.findByText('Drink water');
     await user.click(screen.getByRole('button', { name: 'Compléter' }));
 
     expect(complete).toHaveBeenCalledWith('h1');
+    expect(toast.success).toHaveBeenCalledWith('Complétée — streak 1');
     expect(await screen.findByText('streak 1')).toBeTruthy();
   });
 
   it('supprime une habitude de la liste', async () => {
     const user = userEvent.setup();
     const remove = vi.fn().mockReturnValue(of(void 0));
+    const list = vi
+      .fn()
+      .mockReturnValueOnce(of(pageOf(initialHabits)))
+      .mockReturnValueOnce(of(pageOf([])));
 
     await render(HabitsPage, {
-      providers: [
-        {
-          provide: HabitService,
-          useValue: {
-            list: vi.fn().mockReturnValue(of(initialHabits)),
-            create: vi.fn(),
-            complete: vi.fn(),
-            delete: remove,
-          },
-        },
-        {
-          provide: AuthService,
-          useValue: { logout: vi.fn() },
-        },
-        {
-          provide: Router,
-          useValue: { navigateByUrl: vi.fn() },
-        },
-      ],
+      providers: providers({
+        list,
+        create: vi.fn(),
+        complete: vi.fn(),
+        delete: remove,
+      }),
     });
 
     await screen.findByText('Drink water');
     await user.click(screen.getByRole('button', { name: 'Supprimer' }));
 
     expect(remove).toHaveBeenCalledWith('h1');
-    expect(screen.queryByText('Drink water')).toBeNull();
+    expect(toast.success).toHaveBeenCalledWith('Habitude supprimée');
+    expect(await screen.findByText(/Aucune habitude/)).toBeTruthy();
   });
 });

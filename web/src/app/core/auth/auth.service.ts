@@ -1,47 +1,69 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
-import { AuthTokenResponse, LoginCredentials } from './auth.models';
+import { AuthTokenResponse, LoginCredentials, RefreshRequest } from './auth.models';
 
-const TOKEN_KEY = 'habits.accessToken';
+const ACCESS_TOKEN_KEY = 'habits.accessToken';
+const REFRESH_TOKEN_KEY = 'habits.refreshToken';
 
 /**
  * AuthService ≈ un composable/pinia store + fetch.
- * - signal `token` = état réactif (comme ref/useState)
- * - HttpClient = axios/fetch encapsulé Angular
+ * Access JWT court + refresh opaque longue durée.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
 
-  private readonly tokenSignal = signal<string | null>(this.readStoredToken());
+  private readonly tokenSignal = signal<string | null>(this.readAccessToken());
+  private readonly refreshTokenSignal = signal<string | null>(this.readRefreshToken());
 
   readonly token = this.tokenSignal.asReadonly();
+  readonly refreshToken = this.refreshTokenSignal.asReadonly();
   readonly isAuthenticated = computed(() => !!this.tokenSignal());
 
   register(credentials: LoginCredentials): Observable<AuthTokenResponse> {
     return this.http
       .post<AuthTokenResponse>('/api/auth/register', credentials)
-      .pipe(tap((response) => this.persistToken(response.accessToken)));
+      .pipe(tap((response) => this.persistSession(response)));
   }
 
   login(credentials: LoginCredentials): Observable<AuthTokenResponse> {
     return this.http
       .post<AuthTokenResponse>('/api/auth/login', credentials)
-      .pipe(tap((response) => this.persistToken(response.accessToken)));
+      .pipe(tap((response) => this.persistSession(response)));
+  }
+
+  refresh(): Observable<AuthTokenResponse> {
+    const refreshToken = this.refreshTokenSignal();
+    if (!refreshToken) {
+      throw new Error('No refresh token');
+    }
+
+    const body: RefreshRequest = { refreshToken };
+    return this.http
+      .post<AuthTokenResponse>('/api/auth/refresh', body)
+      .pipe(tap((response) => this.persistSession(response)));
   }
 
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     this.tokenSignal.set(null);
+    this.refreshTokenSignal.set(null);
   }
 
-  private persistToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
-    this.tokenSignal.set(token);
+  private persistSession(response: AuthTokenResponse): void {
+    localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+    this.tokenSignal.set(response.accessToken);
+    this.refreshTokenSignal.set(response.refreshToken);
   }
 
-  private readStoredToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+  private readAccessToken(): string | null {
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  }
+
+  private readRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
 }

@@ -1,5 +1,6 @@
 package com.learn.api.infrastructure.security;
 
+import com.learn.api.application.auth.JwtSettings;
 import com.learn.api.application.auth.TokenProvider;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,7 +13,7 @@ import javax.crypto.SecretKey;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtTokenProvider implements TokenProvider {
+public class JwtTokenProvider implements TokenProvider, JwtSettings {
 
 	private final JwtProperties properties;
 	private final SecretKey key;
@@ -34,6 +35,21 @@ public class JwtTokenProvider implements TokenProvider {
 				.expiration(Date.from(expires))
 				.signWith(key)
 				.compact();
+	}
+
+	@Override
+	public String issueRefreshToken() {
+		return UUID.randomUUID() + "." + UUID.randomUUID();
+	}
+
+	@Override
+	public long accessExpirationMinutes() {
+		return properties.expirationMinutes();
+	}
+
+	@Override
+	public long refreshExpirationDays() {
+		return properties.refreshExpirationDays();
 	}
 
 	public Claims parse(String token) {

@@ -27,13 +27,13 @@ class ListHabitsUseCaseTest {
 	}
 
 	@Test
-	@DisplayName("liste uniquement les habits du owner")
-	void execute_returnsOwnerHabits() {
+	@DisplayName("délègue la pagination/filtre au repository")
+	void execute_returnsOwnerHabitsPage() {
 		UUID ownerId = UUID.randomUUID();
-		List<Habit> expected = List.of(Habit.create(ownerId, "Run"));
-		when(habits.findAllByOwnerId(ownerId)).thenReturn(expected);
+		HabitPage expected = new HabitPage(List.of(Habit.create(ownerId, "Run")), 0, 10, 1, 1);
+		when(habits.findPageByOwnerId(ownerId, "run", 0, 10)).thenReturn(expected);
 
-		List<Habit> result = useCase.execute(ownerId);
+		HabitPage result = useCase.execute(new ListHabitsQuery(ownerId, " run ", 0, 10));
 
 		assertThat(result).isEqualTo(expected);
 	}

@@ -3,6 +3,7 @@ package com.learn.api.api.auth;
 import com.learn.api.application.auth.AuthTokenResult;
 import com.learn.api.application.auth.LoginUserCommand;
 import com.learn.api.application.auth.LoginUserUseCase;
+import com.learn.api.application.auth.RefreshAccessTokenUseCase;
 import com.learn.api.application.auth.RegisterUserCommand;
 import com.learn.api.application.auth.RegisterUserUseCase;
 import jakarta.validation.Valid;
@@ -13,36 +14,45 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Couche API = adapters HTTP.
- * Le controller ne contient quasi aucune logique : il délègue au use case.
- */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
 	private final RegisterUserUseCase registerUser;
 	private final LoginUserUseCase loginUser;
+	private final RefreshAccessTokenUseCase refreshAccessToken;
 
-	public AuthController(RegisterUserUseCase registerUser, LoginUserUseCase loginUser) {
+	public AuthController(
+			RegisterUserUseCase registerUser,
+			LoginUserUseCase loginUser,
+			RefreshAccessTokenUseCase refreshAccessToken
+	) {
 		this.registerUser = registerUser;
 		this.loginUser = loginUser;
+		this.refreshAccessToken = refreshAccessToken;
 	}
 
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-		AuthTokenResult result = registerUser.execute(
+		return toResponse(registerUser.execute(
 				new RegisterUserCommand(request.email(), request.password())
-		);
-		return new AuthResponse(result.accessToken(), result.tokenType());
+		));
 	}
 
 	@PostMapping("/login")
 	public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-		AuthTokenResult result = loginUser.execute(
+		return toResponse(loginUser.execute(
 				new LoginUserCommand(request.email(), request.password())
-		);
-		return new AuthResponse(result.accessToken(), result.tokenType());
+		));
+	}
+
+	@PostMapping("/refresh")
+	public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
+		return toResponse(refreshAccessToken.execute(request.refreshToken()));
+	}
+
+	private static AuthResponse toResponse(AuthTokenResult result) {
+		return new AuthResponse(result.accessToken(), result.refreshToken(), result.tokenType());
 	}
 }

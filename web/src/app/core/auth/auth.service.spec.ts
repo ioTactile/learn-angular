@@ -23,37 +23,65 @@ describe('AuthService', () => {
     localStorage.clear();
   });
 
-  it('register stocke le JWT et marque authentifié', () => {
-    let receivedToken = '';
-
-    service.register({ email: 'a@example.com', password: 'Secret123!' }).subscribe((res) => {
-      receivedToken = res.accessToken;
-    });
+  it('register stocke access + refresh tokens', () => {
+    service.register({ email: 'a@example.com', password: 'Secret123!' }).subscribe();
 
     const req = http.expectOne('/api/auth/register');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ email: 'a@example.com', password: 'Secret123!' });
-    req.flush({ accessToken: 'jwt-abc', tokenType: 'Bearer' });
+    req.flush({
+      accessToken: 'jwt-abc',
+      refreshToken: 'refresh-abc',
+      tokenType: 'Bearer',
+    });
 
-    expect(receivedToken).toBe('jwt-abc');
     expect(service.token()).toBe('jwt-abc');
+    expect(service.refreshToken()).toBe('refresh-abc');
     expect(service.isAuthenticated()).toBe(true);
     expect(localStorage.getItem('habits.accessToken')).toBe('jwt-abc');
+    expect(localStorage.getItem('habits.refreshToken')).toBe('refresh-abc');
   });
 
-  it('login stocke le JWT', () => {
+  it('login stocke les tokens', () => {
     service.login({ email: 'a@example.com', password: 'Secret123!' }).subscribe();
 
     const req = http.expectOne('/api/auth/login');
-    expect(req.request.method).toBe('POST');
-    req.flush({ accessToken: 'jwt-login', tokenType: 'Bearer' });
+    req.flush({
+      accessToken: 'jwt-login',
+      refreshToken: 'refresh-login',
+      tokenType: 'Bearer',
+    });
 
     expect(service.token()).toBe('jwt-login');
+    expect(service.refreshToken()).toBe('refresh-login');
   });
 
-  it('logout efface le token', () => {
+  it('refresh renouvelle la session', () => {
+    localStorage.setItem('habits.accessToken', 'old-access');
+    localStorage.setItem('habits.refreshToken', 'old-refresh');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(AuthService);
+    http = TestBed.inject(HttpTestingController);
+
+    service.refresh().subscribe();
+
+    const req = http.expectOne('/api/auth/refresh');
+    expect(req.request.body).toEqual({ refreshToken: 'old-refresh' });
+    req.flush({
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+      tokenType: 'Bearer',
+    });
+
+    expect(service.token()).toBe('new-access');
+    expect(service.refreshToken()).toBe('new-refresh');
+  });
+
+  it('logout efface les tokens', () => {
     localStorage.setItem('habits.accessToken', 'jwt-old');
-    // recreate service to pick up stored token
+    localStorage.setItem('habits.refreshToken', 'refresh-old');
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -65,5 +93,6 @@ describe('AuthService', () => {
     service.logout();
     expect(service.isAuthenticated()).toBe(false);
     expect(localStorage.getItem('habits.accessToken')).toBeNull();
+    expect(localStorage.getItem('habits.refreshToken')).toBeNull();
   });
 });

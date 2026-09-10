@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import com.learn.api.domain.user.EmailAlreadyRegisteredException;
 import com.learn.api.domain.user.User;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,10 +17,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/**
- * Test unitaire du use case : pas de Spring, pas de DB.
- * Équivalent d'un test vitest d'un service avec dépendances mockées.
- */
 @ExtendWith(MockitoExtension.class)
 class RegisterUserUseCaseTest {
 
@@ -32,26 +27,28 @@ class RegisterUserUseCaseTest {
 	PasswordHasher passwordHasher;
 
 	@Mock
-	TokenProvider tokenProvider;
+	AuthSessionService sessions;
 
 	RegisterUserUseCase useCase;
 
 	@BeforeEach
 	void setUp() {
-		useCase = new RegisterUserUseCase(users, passwordHasher, tokenProvider);
+		useCase = new RegisterUserUseCase(users, passwordHasher, sessions);
 	}
 
 	@Test
-	@DisplayName("enregistre un utilisateur et renvoie un token Bearer")
+	@DisplayName("enregistre un utilisateur et ouvre une session")
 	void execute_persistsHashedPasswordAndReturnsToken() {
 		when(users.existsByEmail("alice@example.com")).thenReturn(false);
 		when(passwordHasher.hash("Secret123!")).thenReturn("hashed");
 		when(users.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-		when(tokenProvider.issueAccessToken(any(UUID.class), any())).thenReturn("jwt-token");
+		when(sessions.openSession(any(User.class)))
+				.thenReturn(AuthTokenResult.bearer("jwt-token", "refresh-token"));
 
 		AuthTokenResult result = useCase.execute(new RegisterUserCommand("Alice@Example.com", "Secret123!"));
 
 		assertThat(result.accessToken()).isEqualTo("jwt-token");
+		assertThat(result.refreshToken()).isEqualTo("refresh-token");
 		assertThat(result.tokenType()).isEqualTo("Bearer");
 
 		ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);

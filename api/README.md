@@ -38,13 +38,14 @@ api/             controllers, DTOs, exception handlers
 
 ## Auth
 
-- `POST /api/auth/register` → `201` + JWT
-- `POST /api/auth/login` → `200` + JWT (ou `401`)
+- `POST /api/auth/register` → `201` + JWT access + refresh
+- `POST /api/auth/login` → `200` + JWT access + refresh (ou `401`)
+- `POST /api/auth/refresh` `{ "refreshToken" }` → nouveaux tokens
 - `GET /api/me` (Bearer requis) → `{ id, email }`
 
 ## Habits (Bearer requis)
 
 - `POST /api/habits` `{ "title" }` → `201`
-- `GET /api/habits` → liste des habits du user connecté
+- `GET /api/habits?page=0&size=10&q=drink` → page `{ content, totalElements, ... }`
 - `DELETE /api/habits/{id}` → `204` (ou `404` si pas à toi)
 - `POST /api/habits/{id}/complete` → habit avec `streak` / `lastCompletedOn`

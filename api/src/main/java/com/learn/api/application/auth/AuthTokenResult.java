@@ -1,11 +1,11 @@
 package com.learn.api.application.auth;
 
 /**
- * Résultat du register : token prêt à être renvoyé au client.
+ * Résultat auth : access JWT court + refresh opaque longue durée.
  */
-public record AuthTokenResult(String accessToken, String tokenType) {
+public record AuthTokenResult(String accessToken, String refreshToken, String tokenType) {
 
-	public static AuthTokenResult bearer(String accessToken) {
-		return new AuthTokenResult(accessToken, "Bearer");
+	public static AuthTokenResult bearer(String accessToken, String refreshToken) {
+		return new AuthTokenResult(accessToken, refreshToken, "Bearer");
 	}
 }

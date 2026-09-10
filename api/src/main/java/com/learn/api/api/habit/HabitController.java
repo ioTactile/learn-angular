@@ -4,10 +4,11 @@ import com.learn.api.application.habit.CompleteHabitUseCase;
 import com.learn.api.application.habit.CreateHabitCommand;
 import com.learn.api.application.habit.CreateHabitUseCase;
 import com.learn.api.application.habit.DeleteHabitUseCase;
+import com.learn.api.application.habit.HabitPage;
+import com.learn.api.application.habit.ListHabitsQuery;
 import com.learn.api.application.habit.ListHabitsUseCase;
 import com.learn.api.domain.habit.Habit;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -17,13 +18,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Endpoints protégés : Spring Security exige un JWT valide
- * (voir SecurityConfig.anyRequest().authenticated()).
- */
 @RestController
 @RequestMapping("/api/habits")
 public class HabitController {
@@ -54,11 +52,22 @@ public class HabitController {
 	}
 
 	@GetMapping
-	public List<HabitResponse> list(Authentication authentication) {
-		UUID ownerId = currentUserId(authentication);
-		return listHabits.execute(ownerId).stream()
-				.map(this::toResponse)
-				.toList();
+	public HabitPageResponse list(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) String q,
+			Authentication authentication
+	) {
+		HabitPage result = listHabits.execute(
+				new ListHabitsQuery(currentUserId(authentication), q, page, size)
+		);
+		return new HabitPageResponse(
+				result.content().stream().map(this::toResponse).toList(),
+				result.page(),
+				result.size(),
+				result.totalElements(),
+				result.totalPages()
+		);
 	}
 
 	@DeleteMapping("/{id}")

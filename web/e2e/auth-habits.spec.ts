@@ -26,6 +26,14 @@ async function login(page: Page, email: string, pwd: string) {
   await expect(page).toHaveURL(/\/habits/);
 }
 
+async function createHabit(page: Page, title: string) {
+  const input = page.getByLabel('Nouvelle habitude');
+  await input.fill(title);
+  const add = page.getByRole('button', { name: 'Ajouter' });
+  await expect(add).toBeEnabled();
+  await add.click();
+}
+
 test.describe('Auth → Habits flow', () => {
   test('register crée un compte et redirige vers /habits', async ({ page }) => {
     await register(page, unique, password);
@@ -45,8 +53,7 @@ test.describe('Auth → Habits flow', () => {
   test('crée une habitude, la complète, puis la supprime', async ({ page }) => {
     await register(page, unique + '.crud', password);
 
-    await page.getByPlaceholder('Nouvelle habitude…').fill('E2E Habit');
-    await page.getByRole('button', { name: 'Ajouter' }).click();
+    await createHabit(page, 'E2E Habit');
     await expect(page.getByText('E2E Habit')).toBeVisible();
     await expect(page.getByText('streak 0')).toBeVisible();
 
@@ -55,7 +62,7 @@ test.describe('Auth → Habits flow', () => {
 
     await page.getByRole('button', { name: 'Supprimer' }).click();
     await expect(page.getByText('E2E Habit')).not.toBeVisible();
-    await expect(page.getByText('Aucune habitude')).toBeVisible();
+    await expect(page.getByText(/Aucune habitude/)).toBeVisible();
   });
 
   test("register un email existant affiche l'erreur 409", async ({ page }) => {

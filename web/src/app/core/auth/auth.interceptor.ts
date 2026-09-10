@@ -3,10 +3,14 @@ import { inject } from '@angular/core';
 import { AuthService } from './auth.service';
 
 /**
- * Interceptor fonctionnel ≈ middleware axios / plugin Fastify.
- * Ajoute Authorization: Bearer <token> si présent.
+ * Ajoute Authorization: Bearer <accessToken> si présent.
+ * Ne touche pas /api/auth/refresh (évite de boucler).
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.url.includes('/api/auth/refresh')) {
+    return next(req);
+  }
+
   const auth = inject(AuthService);
   const token = auth.token();
 

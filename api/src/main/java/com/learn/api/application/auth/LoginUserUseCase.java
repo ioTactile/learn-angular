@@ -10,19 +10,19 @@ public class LoginUserUseCase {
 
 	private final UserRepository users;
 	private final PasswordHasher passwordHasher;
-	private final TokenProvider tokenProvider;
+	private final AuthSessionService sessions;
 
 	public LoginUserUseCase(
 			UserRepository users,
 			PasswordHasher passwordHasher,
-			TokenProvider tokenProvider
+			AuthSessionService sessions
 	) {
 		this.users = users;
 		this.passwordHasher = passwordHasher;
-		this.tokenProvider = tokenProvider;
+		this.sessions = sessions;
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public AuthTokenResult execute(LoginUserCommand command) {
 		String email = command.email().trim().toLowerCase();
 
@@ -33,7 +33,6 @@ public class LoginUserUseCase {
 			throw new InvalidCredentialsException();
 		}
 
-		String token = tokenProvider.issueAccessToken(user.id(), user.email());
-		return AuthTokenResult.bearer(token);
+		return sessions.openSession(user);
 	}
 }

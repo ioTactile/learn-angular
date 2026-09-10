@@ -60,8 +60,8 @@ class HabitIT {
 		mockMvc.perform(get("/api/habits")
 						.header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(1))
-				.andExpect(jsonPath("$[0].title").value("Drink water"));
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].title").value("Drink water"));
 	}
 
 	@Test
@@ -81,7 +81,7 @@ class HabitIT {
 		mockMvc.perform(get("/api/habits")
 						.header(HttpHeaders.AUTHORIZATION, "Bearer " + bobToken))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(0));
+				.andExpect(jsonPath("$.content.length()").value(0));
 	}
 
 	@Test
@@ -117,7 +117,7 @@ class HabitIT {
 		mockMvc.perform(get("/api/habits")
 						.header(HttpHeaders.AUTHORIZATION, "Bearer " + aliceToken))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(0));
+				.andExpect(jsonPath("$.content.length()").value(0));
 	}
 
 	@Test

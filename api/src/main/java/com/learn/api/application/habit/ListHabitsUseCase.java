@@ -1,8 +1,5 @@
 package com.learn.api.application.habit;
 
-import com.learn.api.domain.habit.Habit;
-import java.util.List;
-import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +13,10 @@ public class ListHabitsUseCase {
 	}
 
 	@Transactional(readOnly = true)
-	public List<Habit> execute(UUID ownerId) {
-		return habits.findAllByOwnerId(ownerId);
+	public HabitPage execute(ListHabitsQuery query) {
+		int page = Math.max(query.page(), 0);
+		int size = query.size() <= 0 ? 10 : Math.min(query.size(), 100);
+		String q = query.q() == null ? "" : query.q().trim();
+		return habits.findPageByOwnerId(query.ownerId(), q, page, size);
 	}
 }

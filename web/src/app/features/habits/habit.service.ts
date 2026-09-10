@@ -1,14 +1,22 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CreateHabitPayload, Habit } from './habit.models';
+import { CreateHabitPayload, Habit, HabitPage, ListHabitsParams } from './habit.models';
 
 @Injectable({ providedIn: 'root' })
 export class HabitService {
   private readonly http = inject(HttpClient);
 
-  list(): Observable<Habit[]> {
-    return this.http.get<Habit[]>('/api/habits');
+  list(params: ListHabitsParams = {}): Observable<HabitPage> {
+    let httpParams = new HttpParams()
+      .set('page', String(params.page ?? 0))
+      .set('size', String(params.size ?? 10));
+
+    if (params.q?.trim()) {
+      httpParams = httpParams.set('q', params.q.trim());
+    }
+
+    return this.http.get<HabitPage>('/api/habits', { params: httpParams });
   }
 
   create(payload: CreateHabitPayload): Observable<Habit> {

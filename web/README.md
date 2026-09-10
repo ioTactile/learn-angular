@@ -39,7 +39,7 @@ Installé via `ng add @angular/material` :
 - Thème M3 : `src/material-theme.scss` (palette azure)
 - Animations : `provideAnimationsAsync()` dans `app.config.ts`
 - UI Material sur `/login`, `/register`, `/habits`
-  (`mat-card`, `mat-toolbar`, `mat-list`, `mat-chip`, `mat-spinner`…)
+  (`mat-card`, `mat-toolbar`, `mat-table`, `mat-paginator`, snackbars via `ToastService`)
 
 Doc : https://material.angular.dev
 

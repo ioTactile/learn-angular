@@ -11,6 +11,8 @@ public interface HabitRepository {
 
 	List<Habit> findAllByOwnerId(UUID ownerId);
 
+	HabitPage findPageByOwnerId(UUID ownerId, String query, int page, int size);
+
 	Optional<Habit> findByIdAndOwnerId(UUID id, UUID ownerId);
 
 	void delete(Habit habit);

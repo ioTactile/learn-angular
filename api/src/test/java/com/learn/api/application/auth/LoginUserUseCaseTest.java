@@ -27,40 +27,41 @@ class LoginUserUseCaseTest {
 	PasswordHasher passwordHasher;
 
 	@Mock
-	TokenProvider tokenProvider;
+	AuthSessionService sessions;
 
 	LoginUserUseCase useCase;
 
 	@BeforeEach
 	void setUp() {
-		useCase = new LoginUserUseCase(users, passwordHasher, tokenProvider);
+		useCase = new LoginUserUseCase(users, passwordHasher, sessions);
 	}
 
 	@Test
-	@DisplayName("login valide renvoie un token Bearer")
+	@DisplayName("login valide ouvre une session Bearer")
 	void execute_withValidCredentials_returnsToken() {
 		UUID id = UUID.randomUUID();
 		User user = new User(id, "alice@example.com", "hashed", Instant.now());
 
 		when(users.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
 		when(passwordHasher.matches("Secret123!", "hashed")).thenReturn(true);
-		when(tokenProvider.issueAccessToken(id, "alice@example.com")).thenReturn("jwt-token");
+		when(sessions.openSession(user)).thenReturn(AuthTokenResult.bearer("jwt-token", "refresh-token"));
 
 		AuthTokenResult result = useCase.execute(new LoginUserCommand("Alice@Example.com", "Secret123!"));
 
 		assertThat(result.accessToken()).isEqualTo("jwt-token");
+		assertThat(result.refreshToken()).isEqualTo("refresh-token");
 		assertThat(result.tokenType()).isEqualTo("Bearer");
 	}
 
 	@Test
-	@DisplayName("email inconnu → InvalidCredentials (pas d'énumération d'emails)")
+	@DisplayName("email inconnu → InvalidCredentials")
 	void execute_whenUserMissing_throwsInvalidCredentials() {
 		when(users.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> useCase.execute(new LoginUserCommand("ghost@example.com", "Secret123!")))
 				.isInstanceOf(InvalidCredentialsException.class);
 
-		verifyNoInteractions(passwordHasher, tokenProvider);
+		verifyNoInteractions(passwordHasher, sessions);
 	}
 
 	@Test
@@ -73,6 +74,6 @@ class LoginUserUseCaseTest {
 		assertThatThrownBy(() -> useCase.execute(new LoginUserCommand("alice@example.com", "wrong-password")))
 				.isInstanceOf(InvalidCredentialsException.class);
 
-		verifyNoInteractions(tokenProvider);
+		verifyNoInteractions(sessions);
 	}
 }

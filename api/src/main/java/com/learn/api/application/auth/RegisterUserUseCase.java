@@ -5,25 +5,21 @@ import com.learn.api.domain.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Use case Register = logique métier orchestrée.
- * Équivalent d'un service applicatif Nest : pas de HttpRequest ici.
- */
 @Service
 public class RegisterUserUseCase {
 
 	private final UserRepository users;
 	private final PasswordHasher passwordHasher;
-	private final TokenProvider tokenProvider;
+	private final AuthSessionService sessions;
 
 	public RegisterUserUseCase(
 			UserRepository users,
 			PasswordHasher passwordHasher,
-			TokenProvider tokenProvider
+			AuthSessionService sessions
 	) {
 		this.users = users;
 		this.passwordHasher = passwordHasher;
-		this.tokenProvider = tokenProvider;
+		this.sessions = sessions;
 	}
 
 	@Transactional
@@ -36,8 +32,6 @@ public class RegisterUserUseCase {
 
 		User user = User.create(email, passwordHasher.hash(command.password()));
 		User saved = users.save(user);
-
-		String token = tokenProvider.issueAccessToken(saved.id(), saved.email());
-		return AuthTokenResult.bearer(token);
+		return sessions.openSession(saved);
 	}
 }
