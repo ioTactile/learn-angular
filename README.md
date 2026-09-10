@@ -52,6 +52,7 @@ Auth :
 - `POST /api/auth/register` → access + refresh (rôle USER)
 - `POST /api/auth/login` → access + refresh
 - `POST /api/auth/refresh` → rotation des tokens
+- `POST /api/auth/logout` `{ "refreshToken" }` → `204`, révoque le refresh
 - `GET /api/me` (Bearer) → `{ id, email, role }`
 - `GET /api/admin/users` (ADMIN) → liste des comptes
 

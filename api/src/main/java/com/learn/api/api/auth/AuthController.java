@@ -3,6 +3,7 @@ package com.learn.api.api.auth;
 import com.learn.api.application.auth.AuthTokenResult;
 import com.learn.api.application.auth.LoginUserCommand;
 import com.learn.api.application.auth.LoginUserUseCase;
+import com.learn.api.application.auth.LogoutUserUseCase;
 import com.learn.api.application.auth.RefreshAccessTokenUseCase;
 import com.learn.api.application.auth.RegisterUserCommand;
 import com.learn.api.application.auth.RegisterUserUseCase;
@@ -21,15 +22,18 @@ public class AuthController {
 	private final RegisterUserUseCase registerUser;
 	private final LoginUserUseCase loginUser;
 	private final RefreshAccessTokenUseCase refreshAccessToken;
+	private final LogoutUserUseCase logoutUser;
 
 	public AuthController(
 			RegisterUserUseCase registerUser,
 			LoginUserUseCase loginUser,
-			RefreshAccessTokenUseCase refreshAccessToken
+			RefreshAccessTokenUseCase refreshAccessToken,
+			LogoutUserUseCase logoutUser
 	) {
 		this.registerUser = registerUser;
 		this.loginUser = loginUser;
 		this.refreshAccessToken = refreshAccessToken;
+		this.logoutUser = logoutUser;
 	}
 
 	@PostMapping("/register")
@@ -50,6 +54,12 @@ public class AuthController {
 	@PostMapping("/refresh")
 	public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
 		return toResponse(refreshAccessToken.execute(request.refreshToken()));
+	}
+
+	@PostMapping("/logout")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void logout(@Valid @RequestBody RefreshRequest request) {
+		logoutUser.execute(request.refreshToken());
 	}
 
 	private static AuthResponse toResponse(AuthTokenResult result) {

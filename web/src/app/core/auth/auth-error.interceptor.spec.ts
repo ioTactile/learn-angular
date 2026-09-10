@@ -88,4 +88,15 @@ describe('authErrorInterceptor', () => {
     expect(auth.logout).toHaveBeenCalled();
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
+
+  it('un 401 sur /api/auth/logout ne déclenche pas de refresh', () => {
+    http.post('/api/auth/logout', { refreshToken: 'x' }).subscribe({
+      error: () => undefined,
+    });
+
+    httpMock.expectOne('/api/auth/logout').flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    expect(auth.refresh).not.toHaveBeenCalled();
+    expect(auth.logout).not.toHaveBeenCalled();
+  });
 });

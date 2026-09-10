@@ -4,10 +4,10 @@ import { AuthService } from './auth.service';
 
 /**
  * Ajoute Authorization: Bearer <accessToken> si présent.
- * Ne touche pas /api/auth/refresh (évite de boucler).
+ * Ne touche pas refresh/logout (le refresh opaque est le credential).
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (req.url.includes('/api/auth/refresh')) {
+  if (req.url.includes('/api/auth/refresh') || req.url.includes('/api/auth/logout')) {
     return next(req);
   }
 

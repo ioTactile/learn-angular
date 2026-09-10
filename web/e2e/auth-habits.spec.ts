@@ -43,7 +43,11 @@ test.describe('Auth → Habits flow', () => {
   test('logout puis login avec les mêmes identifiants', async ({ page }) => {
     await register(page, unique + '.login', password);
 
+    const logoutReq = page.waitForRequest(
+      (request) => request.url().includes('/api/auth/logout') && request.method() === 'POST',
+    );
     await page.getByRole('button', { name: 'Déconnexion' }).click();
+    await logoutReq;
     await expect(page).toHaveURL(/\/login/);
 
     await login(page, unique + '.login', password);

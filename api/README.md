@@ -41,6 +41,7 @@ api/             controllers, DTOs, exception handlers
 - `POST /api/auth/register` → `201` + JWT access + refresh (rôle `USER`)
 - `POST /api/auth/login` → `200` + JWT access + refresh (ou `401`)
 - `POST /api/auth/refresh` `{ "refreshToken" }` → nouveaux tokens
+- `POST /api/auth/logout` `{ "refreshToken" }` → `204` (idempotent, révoque le refresh)
 - `GET /api/me` (Bearer) → `{ id, email, role }`
 - `GET /api/admin/users` (Bearer + rôle `ADMIN`) → liste utilisateurs
 

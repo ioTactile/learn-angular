@@ -64,6 +64,20 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = this.refreshTokenSignal();
+    this.clearSession();
+    if (!refreshToken) {
+      return;
+    }
+
+    this.http
+      .post('/api/auth/logout', { refreshToken } satisfies RefreshRequest, { responseType: 'text' })
+      .subscribe({
+        error: () => undefined,
+      });
+  }
+
+  private clearSession(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     this.tokenSignal.set(null);

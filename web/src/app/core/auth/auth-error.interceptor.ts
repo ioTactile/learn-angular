@@ -67,6 +67,7 @@ function isAuthEndpoint(req: HttpRequest<unknown>): boolean {
   return (
     req.url.includes('/api/auth/login') ||
     req.url.includes('/api/auth/register') ||
-    req.url.includes('/api/auth/refresh')
+    req.url.includes('/api/auth/refresh') ||
+    req.url.includes('/api/auth/logout')
   );
 }
