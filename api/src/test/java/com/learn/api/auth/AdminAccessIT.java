@@ -1,5 +1,6 @@
 package com.learn.api.auth;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -57,8 +58,8 @@ class AdminAccessIT {
 		mockMvc.perform(get("/api/admin/users")
 						.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].email").value("user-role@example.com"))
-				.andExpect(jsonPath("$[0].role").value("ADMIN"));
+				.andExpect(jsonPath("$[*].email").value(hasItem("user-role@example.com")))
+				.andExpect(jsonPath("$[?(@.email=='user-role@example.com')].role").value(hasItem("ADMIN")));
 	}
 
 	private String registerAndGetToken(String email, String password) throws Exception {
