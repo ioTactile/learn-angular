@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -62,7 +61,7 @@ public class ApiExceptionHandler {
 
 		Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
 				.collect(java.util.stream.Collectors.toMap(
-						FieldError::getField,
+						fieldError -> fieldError.getField(),
 						fieldError -> fieldError.getDefaultMessage() == null ? "invalid" : fieldError.getDefaultMessage(),
 						(left, right) -> left
 				));
