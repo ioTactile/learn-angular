@@ -42,24 +42,18 @@ class AdminAccessIT {
 
 		jdbc.update("UPDATE users SET role = 'ADMIN' WHERE email = ?", "user-role@example.com");
 
-		MvcResult login = mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
-								{
-								  "email": "user-role@example.com",
-								  "password": "Secret123!"
-								}
-								"""))
-				.andExpect(status().isOk())
-				.andReturn();
-
-		String adminToken = JsonPath.read(login.getResponse().getContentAsString(), "$.accessToken");
-
+		// Même JWT : le rôle est relu en base, pas pris dans le claim
 		mockMvc.perform(get("/api/admin/users")
-						.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[*].email").value(hasItem("user-role@example.com")))
 				.andExpect(jsonPath("$[?(@.email=='user-role@example.com')].role").value(hasItem("ADMIN")));
+
+		jdbc.update("UPDATE users SET role = 'USER' WHERE email = ?", "user-role@example.com");
+
+		mockMvc.perform(get("/api/admin/users")
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+				.andExpect(status().isForbidden());
 	}
 
 	private String registerAndGetToken(String email, String password) throws Exception {

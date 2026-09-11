@@ -15,6 +15,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -25,6 +26,9 @@ class LoginUserIT {
 
 	@Autowired
 	MockMvc mockMvc;
+
+	@Autowired
+	JdbcTemplate jdbc;
 
 	@Test
 	@DisplayName("POST /api/auth/login renvoie un JWT pour des identifiants valides")
@@ -73,6 +77,17 @@ class LoginUserIT {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value("erin@example.com"))
 				.andExpect(jsonPath("$.role").value("USER"));
+	}
+
+	@Test
+	@DisplayName("GET /api/me avec JWT d'un user supprimé → 401")
+	void me_deletedUser_returnsUnauthorized() throws Exception {
+		String token = registerAndGetToken("gone@example.com", "Secret123!");
+		jdbc.update("DELETE FROM users WHERE email = ?", "gone@example.com");
+
+		mockMvc.perform(get("/api/me")
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+				.andExpect(status().isUnauthorized());
 	}
 
 	private void register(String email, String password) throws Exception {

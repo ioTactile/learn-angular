@@ -1,5 +1,7 @@
 package com.learn.api.infrastructure.security;
 
+import com.learn.api.application.auth.UserRepository;
+import com.learn.api.domain.user.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -8,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,15 +20,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Lit Authorization: Bearer &lt;jwt&gt; et peuple le SecurityContext.
- * Équivalent d'un preHandler Fastify / middleware Express qui attache req.user.
+ * Le rôle vient de la base, pas du claim JWT.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtTokenProvider jwtTokenProvider;
+	private final UserRepository users;
 
-	public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+	public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserRepository users) {
 		this.jwtTokenProvider = jwtTokenProvider;
+		this.users = users;
 	}
 
 	@Override
@@ -40,16 +45,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			String token = header.substring(7);
 			try {
 				Claims claims = jwtTokenProvider.parse(token);
-				String role = claims.get("role", String.class);
-				if (role == null || role.isBlank()) {
-					role = "USER";
+				UUID userId = UUID.fromString(claims.getSubject());
+				User user = users.findById(userId).orElse(null);
+				if (user == null) {
+					SecurityContextHolder.clearContext();
 				}
-				var authentication = new UsernamePasswordAuthenticationToken(
-						claims.getSubject(),
-						null,
-						List.of(new SimpleGrantedAuthority("ROLE_" + role))
-				);
-				SecurityContextHolder.getContext().setAuthentication(authentication);
+				else {
+					var authentication = new UsernamePasswordAuthenticationToken(
+							user.id().toString(),
+							null,
+							List.of(new SimpleGrantedAuthority("ROLE_" + user.role().name()))
+					);
+					SecurityContextHolder.getContext().setAuthentication(authentication);
+				}
 			}
 			catch (JwtException | IllegalArgumentException ignored) {
 				SecurityContextHolder.clearContext();
