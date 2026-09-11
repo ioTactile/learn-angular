@@ -8,12 +8,25 @@ public interface RefreshTokenStore {
 
 	void save(UUID userId, String tokenHash, Instant expiresAt);
 
-	Optional<StoredRefreshToken> findValidByHash(String tokenHash, Instant now);
+	Optional<StoredRefreshToken> findByHash(String tokenHash);
 
-	void deleteByHash(String tokenHash);
+	void revokeByHash(String tokenHash, Instant now);
 
 	void deleteAllByUserId(UUID userId);
 
-	record StoredRefreshToken(UUID id, UUID userId, String tokenHash, Instant expiresAt) {
+	record StoredRefreshToken(
+			UUID id,
+			UUID userId,
+			String tokenHash,
+			Instant expiresAt,
+			Instant revokedAt
+	) {
+		boolean revoked() {
+			return revokedAt != null;
+		}
+
+		boolean expired(Instant now) {
+			return !expiresAt.isAfter(now);
+		}
 	}
 }

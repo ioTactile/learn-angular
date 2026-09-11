@@ -16,7 +16,6 @@ describe('authErrorInterceptor', () => {
   let httpMock: HttpTestingController;
   let auth: {
     token: ReturnType<typeof vi.fn>;
-    refreshToken: ReturnType<typeof vi.fn>;
     refresh: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
   };
@@ -25,9 +24,8 @@ describe('authErrorInterceptor', () => {
   beforeEach(() => {
     auth = {
       token: vi.fn().mockReturnValue('access-1'),
-      refreshToken: vi.fn().mockReturnValue('refresh-1'),
       refresh: vi.fn(),
-      logout: vi.fn(),
+      logout: vi.fn().mockReturnValue(of(undefined)),
     };
     router = { navigateByUrl: vi.fn().mockResolvedValue(true) };
 
@@ -51,7 +49,6 @@ describe('authErrorInterceptor', () => {
     auth.refresh.mockReturnValue(
       of({
         accessToken: 'access-2',
-        refreshToken: 'refresh-2',
         tokenType: 'Bearer',
       }),
     );
@@ -90,7 +87,7 @@ describe('authErrorInterceptor', () => {
   });
 
   it('un 401 sur /api/auth/logout ne déclenche pas de refresh', () => {
-    http.post('/api/auth/logout', { refreshToken: 'x' }).subscribe({
+    http.post('/api/auth/logout', {}).subscribe({
       error: () => undefined,
     });
 

@@ -26,10 +26,11 @@ public class LoginUserUseCase {
 	public AuthTokenResult execute(LoginUserCommand command) {
 		String email = command.email().trim().toLowerCase();
 
-		User user = users.findByEmail(email)
-				.orElseThrow(InvalidCredentialsException::new);
+		User user = users.findByEmail(email).orElse(null);
+		String hash = user == null ? passwordHasher.dummyHash() : user.passwordHash();
+		boolean matches = passwordHasher.matches(command.password(), hash);
 
-		if (!passwordHasher.matches(command.password(), user.passwordHash())) {
+		if (user == null || !matches) {
 			throw new InvalidCredentialsException();
 		}
 

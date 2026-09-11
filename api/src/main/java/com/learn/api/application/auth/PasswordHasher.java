@@ -8,4 +8,7 @@ public interface PasswordHasher {
 	String hash(String rawPassword);
 
 	boolean matches(String rawPassword, String passwordHash);
+
+	/** Hash fixe pour égaliser le temps de réponse si l'email n'existe pas. */
+	String dummyHash();
 }

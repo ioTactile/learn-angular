@@ -41,7 +41,7 @@ class LoginUserUseCaseTest {
 	@DisplayName("login valide ouvre une session Bearer")
 	void execute_withValidCredentials_returnsToken() {
 		UUID id = UUID.randomUUID();
-		User user = new User(id, "alice@example.com", "hashed", UserRole.USER, Instant.now());
+		User user = new User(id, "alice@example.com", "hashed", UserRole.USER, Instant.now(), 0);
 
 		when(users.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
 		when(passwordHasher.matches("Secret123!", "hashed")).thenReturn(true);
@@ -55,20 +55,22 @@ class LoginUserUseCaseTest {
 	}
 
 	@Test
-	@DisplayName("email inconnu → InvalidCredentials")
+	@DisplayName("email inconnu → InvalidCredentials (hash factice pour le timing)")
 	void execute_whenUserMissing_throwsInvalidCredentials() {
 		when(users.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
+		when(passwordHasher.dummyHash()).thenReturn("dummy-hash");
+		when(passwordHasher.matches("Secret123!", "dummy-hash")).thenReturn(false);
 
 		assertThatThrownBy(() -> useCase.execute(new LoginUserCommand("ghost@example.com", "Secret123!")))
 				.isInstanceOf(InvalidCredentialsException.class);
 
-		verifyNoInteractions(passwordHasher, sessions);
+		verifyNoInteractions(sessions);
 	}
 
 	@Test
 	@DisplayName("mauvais mot de passe → InvalidCredentials")
 	void execute_whenPasswordWrong_throwsInvalidCredentials() {
-		User user = new User(UUID.randomUUID(), "alice@example.com", "hashed", UserRole.USER, Instant.now());
+		User user = new User(UUID.randomUUID(), "alice@example.com", "hashed", UserRole.USER, Instant.now(), 0);
 		when(users.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
 		when(passwordHasher.matches("wrong-password", "hashed")).thenReturn(false);
 

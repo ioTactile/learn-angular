@@ -13,17 +13,20 @@ public class RefreshAccessTokenUseCase {
 	private final RefreshTokenStore refreshTokens;
 	private final UserRepository users;
 	private final AuthSessionService sessions;
+	private final SessionRevocationService revocations;
 	private final Clock clock;
 
 	public RefreshAccessTokenUseCase(
 			RefreshTokenStore refreshTokens,
 			UserRepository users,
 			AuthSessionService sessions,
+			SessionRevocationService revocations,
 			Clock clock
 	) {
 		this.refreshTokens = refreshTokens;
 		this.users = users;
 		this.sessions = sessions;
+		this.revocations = revocations;
 		this.clock = clock;
 	}
 
@@ -32,14 +35,22 @@ public class RefreshAccessTokenUseCase {
 		Instant now = clock.instant();
 		String hash = AuthSessionService.sha256(rawRefreshToken);
 
-		var stored = refreshTokens.findValidByHash(hash, now)
+		var stored = refreshTokens.findByHash(hash)
 				.orElseThrow(InvalidCredentialsException::new);
+
+		if (stored.revoked()) {
+			revocations.revokeAll(stored.userId());
+			throw new InvalidCredentialsException();
+		}
+
+		if (stored.expired(now)) {
+			throw new InvalidCredentialsException();
+		}
 
 		User user = users.findById(stored.userId())
 				.orElseThrow(InvalidCredentialsException::new);
 
-		// Rotation : invalide l'ancien refresh, en émet un nouveau
-		refreshTokens.deleteByHash(hash);
+		refreshTokens.revokeByHash(hash, now);
 		return sessions.openSession(user);
 	}
 }

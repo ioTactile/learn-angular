@@ -26,15 +26,26 @@ class RefreshTokenJpaEntity {
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
+	@Column(name = "revoked_at")
+	private Instant revokedAt;
+
 	protected RefreshTokenJpaEntity() {
 	}
 
-	RefreshTokenJpaEntity(UUID id, UUID userId, String tokenHash, Instant expiresAt, Instant createdAt) {
+	RefreshTokenJpaEntity(
+			UUID id,
+			UUID userId,
+			String tokenHash,
+			Instant expiresAt,
+			Instant createdAt,
+			Instant revokedAt
+	) {
 		this.id = id;
 		this.userId = userId;
 		this.tokenHash = tokenHash;
 		this.expiresAt = expiresAt;
 		this.createdAt = createdAt;
+		this.revokedAt = revokedAt;
 	}
 
 	UUID getId() {
@@ -51,5 +62,13 @@ class RefreshTokenJpaEntity {
 
 	Instant getExpiresAt() {
 		return expiresAt;
+	}
+
+	Instant getRevokedAt() {
+		return revokedAt;
+	}
+
+	void revoke(Instant now) {
+		this.revokedAt = now;
 	}
 }

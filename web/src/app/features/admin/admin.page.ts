@@ -121,7 +121,6 @@ export class AdminPage implements OnInit {
   }
 
   logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
+    this.auth.logout().subscribe(() => void this.router.navigateByUrl('/login'));
   }
 }

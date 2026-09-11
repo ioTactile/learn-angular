@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
+import { catchError, map, of, switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
 
 /** Guard ≈ middleware Next.js / navigation guard Nuxt. */
@@ -18,10 +18,9 @@ export const authGuard: CanActivateFn = () => {
 
   return auth.loadMe().pipe(
     map(() => true),
-    catchError(() => {
-      auth.logout();
-      return of(router.createUrlTree(['/login']));
-    }),
+    catchError(() =>
+      auth.logout().pipe(switchMap(() => of(router.createUrlTree(['/login'])))),
+    ),
   );
 };
 
@@ -53,9 +52,8 @@ export const adminGuard: CanActivateFn = () => {
 
   return auth.loadMe().pipe(
     map(() => allow()),
-    catchError(() => {
-      auth.logout();
-      return of(router.createUrlTree(['/login']));
-    }),
+    catchError(() =>
+      auth.logout().pipe(switchMap(() => of(router.createUrlTree(['/login'])))),
+    ),
   );
 };

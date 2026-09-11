@@ -10,8 +10,6 @@ describe('AuthService', () => {
   const me = { id: 'u1', email: 'a@example.com', role: 'USER' as const };
 
   beforeEach(() => {
-    localStorage.clear();
-
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -22,36 +20,31 @@ describe('AuthService', () => {
 
   afterEach(() => {
     http.verify();
-    localStorage.clear();
   });
 
-  it('register stocke access + refresh tokens puis charge /me', () => {
+  it('register stocke l’access token puis charge /me', () => {
     service.register({ email: 'a@example.com', password: 'Secret123!' }).subscribe();
 
     const req = http.expectOne('/api/auth/register');
     expect(req.request.method).toBe('POST');
+    expect(req.request.withCredentials).toBe(true);
     req.flush({
       accessToken: 'jwt-abc',
-      refreshToken: 'refresh-abc',
       tokenType: 'Bearer',
     });
 
     http.expectOne('/api/me').flush(me);
 
     expect(service.token()).toBe('jwt-abc');
-    expect(service.refreshToken()).toBe('refresh-abc');
     expect(service.isAuthenticated()).toBe(true);
     expect(service.currentUser()).toEqual(me);
-    expect(localStorage.getItem('habits.accessToken')).toBe('jwt-abc');
-    expect(localStorage.getItem('habits.refreshToken')).toBe('refresh-abc');
   });
 
-  it('login stocke les tokens et le profil', () => {
+  it('login stocke le token et le profil', () => {
     service.login({ email: 'a@example.com', password: 'Secret123!' }).subscribe();
 
     http.expectOne('/api/auth/login').flush({
       accessToken: 'jwt-login',
-      refreshToken: 'refresh-login',
       tokenType: 'Bearer',
     });
     http.expectOne('/api/me').flush({ ...me, role: 'ADMIN' });
@@ -60,74 +53,72 @@ describe('AuthService', () => {
     expect(service.isAdmin()).toBe(true);
   });
 
-  it('refresh renouvelle la session et recharge /me', () => {
-    localStorage.setItem('habits.accessToken', 'old-access');
-    localStorage.setItem('habits.refreshToken', 'old-refresh');
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    });
-    service = TestBed.inject(AuthService);
-    http = TestBed.inject(HttpTestingController);
-
+  it('refresh renouvelle la session via cookie et recharge /me', () => {
     service.refresh().subscribe();
 
     const req = http.expectOne('/api/auth/refresh');
-    expect(req.request.body).toEqual({ refreshToken: 'old-refresh' });
+    expect(req.request.body).toEqual({});
+    expect(req.request.withCredentials).toBe(true);
     req.flush({
       accessToken: 'new-access',
-      refreshToken: 'new-refresh',
       tokenType: 'Bearer',
     });
     http.expectOne('/api/me').flush(me);
 
     expect(service.token()).toBe('new-access');
-    expect(service.refreshToken()).toBe('new-refresh');
     expect(service.currentUser()).toEqual(me);
   });
 
-  it('logout révoque le refresh côté API puis efface la session', () => {
-    localStorage.setItem('habits.accessToken', 'jwt-old');
-    localStorage.setItem('habits.refreshToken', 'refresh-old');
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+  it('restoreSession recharge via refresh puis /me', () => {
+    service.restoreSession().subscribe((user) => {
+      expect(user).toEqual(me);
     });
-    service = TestBed.inject(AuthService);
-    http = TestBed.inject(HttpTestingController);
+
+    http.expectOne('/api/auth/refresh').flush({
+      accessToken: 'restored',
+      tokenType: 'Bearer',
+    });
+    http.expectOne('/api/me').flush(me);
+
+    expect(service.token()).toBe('restored');
+    expect(service.currentUser()).toEqual(me);
+  });
+
+  it('restoreSession renvoie null si le cookie est absent', () => {
+    service.restoreSession().subscribe((user) => {
+      expect(user).toBeNull();
+    });
+
+    http.expectOne('/api/auth/refresh').flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    expect(service.token()).toBeNull();
+  });
+
+  it('logout appelle l’API puis efface la session', () => {
+    service.login({ email: 'a@example.com', password: 'Secret123!' }).subscribe();
+    http.expectOne('/api/auth/login').flush({ accessToken: 'jwt-old', tokenType: 'Bearer' });
+    http.expectOne('/api/me').flush(me);
 
     expect(service.isAuthenticated()).toBe(true);
-    service.logout();
+    service.logout().subscribe();
 
     const req = http.expectOne('/api/auth/logout');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ refreshToken: 'refresh-old' });
+    expect(req.request.withCredentials).toBe(true);
     req.flush(null, { status: 204, statusText: 'No Content' });
 
     expect(service.isAuthenticated()).toBe(false);
     expect(service.currentUser()).toBeNull();
-    expect(localStorage.getItem('habits.accessToken')).toBeNull();
-    expect(localStorage.getItem('habits.refreshToken')).toBeNull();
-  });
-
-  it('logout sans refresh n’appelle pas l’API', () => {
-    service.logout();
   });
 
   it('logout efface la session même si l’API échoue', () => {
-    localStorage.setItem('habits.accessToken', 'jwt-old');
-    localStorage.setItem('habits.refreshToken', 'refresh-old');
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    });
-    service = TestBed.inject(AuthService);
-    http = TestBed.inject(HttpTestingController);
+    service.login({ email: 'a@example.com', password: 'Secret123!' }).subscribe();
+    http.expectOne('/api/auth/login').flush({ accessToken: 'jwt-old', tokenType: 'Bearer' });
+    http.expectOne('/api/me').flush(me);
 
-    service.logout();
+    service.logout().subscribe();
     http.expectOne('/api/auth/logout').flush(null, { status: 500, statusText: 'Server Error' });
 
     expect(service.isAuthenticated()).toBe(false);
-    expect(localStorage.getItem('habits.refreshToken')).toBeNull();
   });
 });

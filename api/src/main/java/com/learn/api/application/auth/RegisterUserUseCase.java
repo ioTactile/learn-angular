@@ -32,7 +32,7 @@ public class RegisterUserUseCase {
 		String email = command.email().trim().toLowerCase();
 
 		if (users.existsByEmail(email)) {
-			throw new EmailAlreadyRegisteredException(email);
+			throw new EmailAlreadyRegisteredException();
 		}
 
 		User user = User.create(email, passwordHasher.hash(command.password()));

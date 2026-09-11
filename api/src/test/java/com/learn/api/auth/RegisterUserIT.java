@@ -2,6 +2,7 @@ package com.learn.api.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +45,7 @@ class RegisterUserIT {
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.accessToken").isString())
 				.andExpect(jsonPath("$.tokenType").value("Bearer"))
+				.andExpect(cookie().exists("refreshToken"))
 				.andReturn();
 
 		String body = result.getResponse().getContentAsString();
@@ -80,6 +82,20 @@ class RegisterUserIT {
 								{
 								  "email": "not-an-email",
 								  "password": "short"
+								}
+								"""))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("POST /api/auth/register refuse un mot de passe sans chiffre")
+	void register_passwordWithoutDigit_returnsBadRequest() throws Exception {
+		mockMvc.perform(post("/api/auth/register")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "email": "weak@example.com",
+								  "password": "NoDigitsHere"
 								}
 								"""))
 				.andExpect(status().isBadRequest());

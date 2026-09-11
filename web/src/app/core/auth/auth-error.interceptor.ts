@@ -12,11 +12,9 @@ let refreshInFlight: ReturnType<AuthService['refresh']> | null = null;
 
 /**
  * Sur 401 :
- * 1. tente un refresh (une seule fois, partagé si requêtes parallèles)
+ * 1. tente un refresh via cookie (une seule fois, partagé si requêtes parallèles)
  * 2. rejoue la requête avec le nouvel access token
  * 3. sinon logout + redirect /login
- *
- * Pattern entreprise classique (axios interceptor / Nuxt plugin).
  */
 export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -32,17 +30,11 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      if (!auth.refreshToken()) {
-        auth.logout();
-        void router.navigateByUrl('/login');
-        return throwError(() => error);
-      }
-
       if (!refreshInFlight) {
         refreshInFlight = auth.refresh().pipe(
           catchError((refreshError) => {
             refreshInFlight = null;
-            auth.logout();
+            auth.logout().subscribe();
             void router.navigateByUrl('/login');
             return throwError(() => refreshError);
           }),

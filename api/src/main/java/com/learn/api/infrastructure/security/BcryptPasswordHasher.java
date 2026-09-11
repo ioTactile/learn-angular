@@ -8,9 +8,11 @@ import org.springframework.stereotype.Component;
 class BcryptPasswordHasher implements PasswordHasher {
 
 	private final PasswordEncoder passwordEncoder;
+	private final String dummyHash;
 
 	BcryptPasswordHasher(PasswordEncoder passwordEncoder) {
 		this.passwordEncoder = passwordEncoder;
+		this.dummyHash = passwordEncoder.encode("timing-dummy");
 	}
 
 	@Override
@@ -21,5 +23,10 @@ class BcryptPasswordHasher implements PasswordHasher {
 	@Override
 	public boolean matches(String rawPassword, String passwordHash) {
 		return passwordEncoder.matches(rawPassword, passwordHash);
+	}
+
+	@Override
+	public String dummyHash() {
+		return dummyHash;
 	}
 }

@@ -33,16 +33,27 @@ class UserJpaEntity {
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
+	@Column(name = "token_version", nullable = false)
+	private int tokenVersion;
+
 	protected UserJpaEntity() {
 		// JPA
 	}
 
-	UserJpaEntity(UUID id, String email, String passwordHash, UserRole role, Instant createdAt) {
+	UserJpaEntity(
+			UUID id,
+			String email,
+			String passwordHash,
+			UserRole role,
+			Instant createdAt,
+			int tokenVersion
+	) {
 		this.id = id;
 		this.email = email;
 		this.passwordHash = passwordHash;
 		this.role = role;
 		this.createdAt = createdAt;
+		this.tokenVersion = tokenVersion;
 	}
 
 	UUID getId() {
@@ -63,5 +74,9 @@ class UserJpaEntity {
 
 	Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	int getTokenVersion() {
+		return tokenVersion;
 	}
 }

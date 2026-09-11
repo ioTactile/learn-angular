@@ -3,8 +3,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: habits
-      POSTGRES_USER: habits
-      POSTGRES_PASSWORD: habits
+      POSTGRES_USER: ${DB_USER:-habits}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:

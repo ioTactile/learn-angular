@@ -24,14 +24,18 @@ public class JwtTokenProvider implements TokenProvider, JwtSettings {
 	}
 
 	@Override
-	public String issueAccessToken(UUID userId, String email, String role) {
+	public String issueAccessToken(UUID userId, String email, String role, int tokenVersion) {
 		Instant now = Instant.now();
 		Instant expires = now.plusSeconds(properties.expirationMinutes() * 60);
 
 		return Jwts.builder()
+				.id(UUID.randomUUID().toString())
+				.issuer(properties.issuer())
+				.audience().add(properties.audience()).and()
 				.subject(userId.toString())
 				.claim("email", email)
 				.claim("role", role)
+				.claim("ver", tokenVersion)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(expires))
 				.signWith(key)
@@ -56,6 +60,8 @@ public class JwtTokenProvider implements TokenProvider, JwtSettings {
 	public Claims parse(String token) {
 		return Jwts.parser()
 				.verifyWith(key)
+				.requireIssuer(properties.issuer())
+				.requireAudience(properties.audience())
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();

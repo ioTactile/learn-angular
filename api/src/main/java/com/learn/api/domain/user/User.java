@@ -12,7 +12,8 @@ public record User(
 		String email,
 		String passwordHash,
 		UserRole role,
-		Instant createdAt
+		Instant createdAt,
+		int tokenVersion
 ) {
 	public static User create(String email, String passwordHash) {
 		return new User(
@@ -20,7 +21,8 @@ public record User(
 				email.trim().toLowerCase(),
 				passwordHash,
 				UserRole.USER,
-				Instant.now()
+				Instant.now(),
+				0
 		);
 	}
 }

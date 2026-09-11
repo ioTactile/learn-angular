@@ -24,6 +24,7 @@ web/     Frontend Angular
 
 ```bash
 cd api
+cp .env.example .env   # JWT_SECRET + DB_PASSWORD
 docker compose up -d
 export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.12.101-hotspot"
 ./mvnw test
@@ -50,10 +51,10 @@ GitHub Actions (`.github/workflows/ci.yml`) :
 
 Auth :
 
-- `POST /api/auth/register` → access + refresh (rôle USER)
-- `POST /api/auth/login` → access + refresh
-- `POST /api/auth/refresh` → rotation des tokens
-- `POST /api/auth/logout` `{ "refreshToken" }` → `204`, révoque le refresh
+- `POST /api/auth/register` → access JWT + cookie refresh HttpOnly (rôle USER)
+- `POST /api/auth/login` → access JWT + cookie refresh HttpOnly
+- `POST /api/auth/refresh` (cookie) → rotation
+- `POST /api/auth/logout` (cookie) → `204`, révoque toutes les sessions
 - `GET /api/me` (Bearer) → `{ id, email, role }`
 - `GET /api/admin/users` (ADMIN) → liste des comptes
 - `GET/POST /api/workspaces` → espaces (register crée « Perso »)
@@ -61,7 +62,7 @@ Auth :
 - `GET /api/habits/{id}` + `GET .../completions?from&to`
 - `POST /api/habits/{id}/complete` `{ note? }`
 
-OpenAPI / Swagger UI : `http://localhost:8080/swagger-ui.html`
+Secrets locaux : copier `api/.env.example` vers `api/.env` (`JWT_SECRET`, `DB_PASSWORD`).
 
 Front (path + search params) :
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Adapter : branche le port UserRepository sur Spring Data JPA.
@@ -31,7 +32,8 @@ class JpaUserRepository implements UserRepository {
 				user.email(),
 				user.passwordHash(),
 				user.role(),
-				user.createdAt()
+				user.createdAt(),
+				user.tokenVersion()
 		);
 		UserJpaEntity saved = jpa.save(entity);
 		return toDomain(saved);
@@ -52,13 +54,20 @@ class JpaUserRepository implements UserRepository {
 		return jpa.findAll().stream().map(this::toDomain).toList();
 	}
 
+	@Override
+	@Transactional
+	public void incrementTokenVersion(UUID userId) {
+		jpa.incrementTokenVersion(userId);
+	}
+
 	private User toDomain(UserJpaEntity entity) {
 		return new User(
 				entity.getId(),
 				entity.getEmail(),
 				entity.getPasswordHash(),
 				entity.getRole(),
-				entity.getCreatedAt()
+				entity.getCreatedAt(),
+				entity.getTokenVersion()
 		);
 	}
 }

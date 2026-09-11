@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { PASSWORD_PATTERN } from '../../core/auth/password.rules';
 
 @Component({
   selector: 'app-register-page',
@@ -40,6 +41,9 @@ import { AuthService } from '../../core/auth/auth.service';
                 formControlName="password"
                 autocomplete="new-password"
               />
+              @if (form.controls.password.hasError('pattern') || form.controls.password.hasError('minlength')) {
+                <mat-error>8 caractères min., une lettre et un chiffre</mat-error>
+              }
             </mat-form-field>
 
             @if (error()) {
@@ -97,7 +101,7 @@ export class RegisterPage {
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(PASSWORD_PATTERN)]],
   });
 
   submit(): void {

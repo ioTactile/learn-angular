@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Lit Authorization: Bearer &lt;jwt&gt; et peuple le SecurityContext.
- * Le rôle vient de la base, pas du claim JWT.
+ * Rôle et version de session viennent de la base.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -47,7 +47,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				Claims claims = jwtTokenProvider.parse(token);
 				UUID userId = UUID.fromString(claims.getSubject());
 				User user = users.findById(userId).orElse(null);
-				if (user == null) {
+				Number version = claims.get("ver", Number.class);
+				if (user == null || version == null || version.intValue() != user.tokenVersion()) {
 					SecurityContextHolder.clearContext();
 				}
 				else {

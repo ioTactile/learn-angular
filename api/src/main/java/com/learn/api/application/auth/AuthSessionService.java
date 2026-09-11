@@ -35,7 +35,12 @@ public class AuthSessionService {
 
 	@Transactional
 	public AuthTokenResult openSession(User user) {
-		String access = tokenProvider.issueAccessToken(user.id(), user.email(), user.role().name());
+		String access = tokenProvider.issueAccessToken(
+				user.id(),
+				user.email(),
+				user.role().name(),
+				user.tokenVersion()
+		);
 		String refresh = tokenProvider.issueRefreshToken();
 		Instant expiresAt = clock.instant().plusSeconds(jwtSettings.refreshExpirationDays() * 24L * 3600L);
 		refreshTokens.save(user.id(), sha256(refresh), expiresAt);

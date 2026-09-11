@@ -2,6 +2,7 @@ package com.learn.api.auth;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,7 +46,8 @@ class LoginUserIT {
 								"""))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.accessToken").isString())
-				.andExpect(jsonPath("$.tokenType").value("Bearer"));
+				.andExpect(jsonPath("$.tokenType").value("Bearer"))
+				.andExpect(cookie().exists("refreshToken"));
 	}
 
 	@Test

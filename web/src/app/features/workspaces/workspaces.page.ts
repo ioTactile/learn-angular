@@ -124,8 +124,7 @@ export class WorkspacesPage implements OnInit {
   }
 
   logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
+    this.auth.logout().subscribe(() => void this.router.navigateByUrl('/login'));
   }
 
   private reload(): void {

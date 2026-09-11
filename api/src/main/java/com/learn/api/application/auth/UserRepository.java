@@ -7,7 +7,6 @@ import java.util.UUID;
 
 /**
  * Port sortant (hexagone) : la couche application ne connaît pas JPA.
- * Comme une interface repository injectée dans un service Nest/Fastify.
  */
 public interface UserRepository {
 
@@ -20,4 +19,6 @@ public interface UserRepository {
 	Optional<User> findById(UUID id);
 
 	List<User> findAll();
+
+	void incrementTokenVersion(UUID userId);
 }

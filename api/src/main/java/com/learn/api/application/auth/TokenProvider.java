@@ -7,7 +7,7 @@ import java.util.UUID;
  */
 public interface TokenProvider {
 
-	String issueAccessToken(UUID userId, String email, String role);
+	String issueAccessToken(UUID userId, String email, String role, int tokenVersion);
 
 	/** Token opaque aléatoire (jamais un JWT) — stocké hashé en base. */
 	String issueRefreshToken();
