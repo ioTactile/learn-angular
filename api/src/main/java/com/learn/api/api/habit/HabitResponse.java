@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 public record HabitResponse(
 		String id,
+		String workspaceId,
 		String title,
 		Instant createdAt,
 		int streak,

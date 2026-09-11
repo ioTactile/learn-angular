@@ -47,5 +47,7 @@ Doc : https://material.angular.dev
 ## Routes
 
 - `/login`, `/register` (guest)
-- `/habits` (auth guard) — créer / compléter / supprimer (confirm dialog)
+- `/workspaces` — liste / création d’espaces
+- `/workspaces/:workspaceId?q&page&size` — habits (path + search params)
+- `/workspaces/:workspaceId/habits/:habitId?from&to` — journal
 - `/admin` (admin guard) — liste des utilisateurs

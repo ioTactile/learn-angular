@@ -33,7 +33,7 @@ export const guestGuard: CanActivateFn = () => {
     return true;
   }
 
-  return router.createUrlTree(['/habits']);
+  return router.createUrlTree(['/workspaces']);
 };
 
 /** UI only — l’API refuse déjà /api/admin/** aux non-ADMIN. */
@@ -45,7 +45,7 @@ export const adminGuard: CanActivateFn = () => {
     return router.createUrlTree(['/login']);
   }
 
-  const allow = () => (auth.isAdmin() ? true : router.createUrlTree(['/habits']));
+  const allow = () => (auth.isAdmin() ? true : router.createUrlTree(['/workspaces']));
 
   if (auth.currentUser()) {
     return allow();

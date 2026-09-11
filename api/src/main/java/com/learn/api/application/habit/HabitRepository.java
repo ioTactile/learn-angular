@@ -13,6 +13,14 @@ public interface HabitRepository {
 
 	HabitPage findPageByOwnerId(UUID ownerId, String query, int page, int size);
 
+	HabitPage findPageByWorkspaceIdAndOwnerId(
+			UUID workspaceId,
+			UUID ownerId,
+			String query,
+			int page,
+			int size
+	);
+
 	Optional<Habit> findByIdAndOwnerId(UUID id, UUID ownerId);
 
 	void delete(Habit habit);

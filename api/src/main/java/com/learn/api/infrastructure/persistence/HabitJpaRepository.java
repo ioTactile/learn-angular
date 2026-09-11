@@ -15,5 +15,14 @@ interface HabitJpaRepository extends JpaRepository<HabitJpaEntity, UUID> {
 
 	Page<HabitJpaEntity> findByOwnerIdAndTitleContainingIgnoreCase(UUID ownerId, String title, Pageable pageable);
 
+	Page<HabitJpaEntity> findByWorkspaceIdAndOwnerId(UUID workspaceId, UUID ownerId, Pageable pageable);
+
+	Page<HabitJpaEntity> findByWorkspaceIdAndOwnerIdAndTitleContainingIgnoreCase(
+			UUID workspaceId,
+			UUID ownerId,
+			String title,
+			Pageable pageable
+	);
+
 	Optional<HabitJpaEntity> findByIdAndOwnerId(UUID id, UUID ownerId);
 }

@@ -111,7 +111,7 @@ export class LoginPage {
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.loading.set(false);
-        void this.router.navigateByUrl('/habits');
+        void this.router.navigateByUrl('/workspaces');
       },
       error: () => {
         this.loading.set(false);

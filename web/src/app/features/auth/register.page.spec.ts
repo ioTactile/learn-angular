@@ -6,7 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { RegisterPage } from './register.page';
 
 describe('RegisterPage', () => {
-  it("crée un compte puis redirige vers /habits", async () => {
+  it("crée un compte puis redirige vers /workspaces", async () => {
     const user = userEvent.setup();
     const register = vi.fn().mockReturnValue(of({ accessToken: 'jwt', tokenType: 'Bearer' }));
 
@@ -31,7 +31,7 @@ describe('RegisterPage', () => {
       email: 'bob@example.com',
       password: 'Secret123!',
     });
-    expect(navigateByUrl).toHaveBeenCalledWith('/habits');
+    expect(navigateByUrl).toHaveBeenCalledWith('/workspaces');
   });
 
   it('affiche un message si email déjà utilisé (409)', async () => {

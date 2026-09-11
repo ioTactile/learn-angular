@@ -6,7 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { LoginPage } from './login.page';
 
 describe('LoginPage', () => {
-  it('soumet le formulaire puis redirige vers /habits', async () => {
+  it('soumet le formulaire puis redirige vers /workspaces', async () => {
     const user = userEvent.setup();
     const login = vi.fn().mockReturnValue(of({ accessToken: 'jwt', tokenType: 'Bearer' }));
 
@@ -31,7 +31,7 @@ describe('LoginPage', () => {
       email: 'alice@example.com',
       password: 'Secret123!',
     });
-    expect(navigateByUrl).toHaveBeenCalledWith('/habits');
+    expect(navigateByUrl).toHaveBeenCalledWith('/workspaces');
   });
 
   it("affiche un message d'erreur si l'authentification échoue", async () => {

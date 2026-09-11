@@ -23,7 +23,7 @@ import { AdminService, AdminUser } from './admin.service';
     <mat-toolbar color="primary" class="toolbar">
       <span class="brand">Admin</span>
       <span class="spacer"></span>
-      <a mat-button routerLink="/habits">Habits</a>
+      <a mat-button routerLink="/workspaces">Workspaces</a>
       <button mat-button type="button" (click)="logout()">Déconnexion</button>
     </mat-toolbar>
 

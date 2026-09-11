@@ -6,23 +6,23 @@ import java.util.UUID;
 
 /**
  * Habit = domaine métier pur.
- * ownerId garantit l'isolation des données par utilisateur.
- * streak : jours consécutifs (règles dans {@link #complete(LocalDate)}).
+ * ownerId + workspaceId isolent les données.
  */
 public record Habit(
 		UUID id,
 		UUID ownerId,
+		UUID workspaceId,
 		String title,
 		Instant createdAt,
 		int streak,
 		LocalDate lastCompletedOn
 ) {
-	public static Habit create(UUID ownerId, String title) {
+	public static Habit create(UUID ownerId, UUID workspaceId, String title) {
 		String normalized = title.trim();
 		if (normalized.isEmpty()) {
 			throw new IllegalArgumentException("Habit title must not be blank");
 		}
-		return new Habit(UUID.randomUUID(), ownerId, normalized, Instant.now(), 0, null);
+		return new Habit(UUID.randomUUID(), ownerId, workspaceId, normalized, Instant.now(), 0, null);
 	}
 
 	/**
@@ -40,6 +40,6 @@ public record Habit(
 				? streak + 1
 				: 1;
 
-		return new Habit(id, ownerId, title, createdAt, nextStreak, today);
+		return new Habit(id, ownerId, workspaceId, title, createdAt, nextStreak, today);
 	}
 }

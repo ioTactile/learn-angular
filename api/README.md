@@ -44,6 +44,12 @@ api/             controllers, DTOs, exception handlers
 - `POST /api/auth/logout` `{ "refreshToken" }` → `204` (idempotent, révoque le refresh)
 - `GET /api/me` (Bearer) → `{ id, email, role }`
 - `GET /api/admin/users` (Bearer + rôle `ADMIN`) → liste utilisateurs
+- `GET/POST /api/workspaces` — register crée un workspace « Perso »
+- `GET /api/habits?workspaceId&page&size&q`
+- `GET /api/habits/{id}` / `GET /api/habits/{id}/completions?from&to`
+- `POST /api/habits` `{ workspaceId, title }`
+- `POST /api/habits/{id}/complete` `{ note? }`
+- `DELETE /api/habits/{id}`
 
 ## OpenAPI
 

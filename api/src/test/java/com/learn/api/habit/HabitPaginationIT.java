@@ -27,15 +27,17 @@ class HabitPaginationIT {
 	MockMvc mockMvc;
 
 	@Test
-	@DisplayName("GET /api/habits pagine et filtre par titre")
+	@DisplayName("GET /api/habits?workspaceId pagine et filtre par titre")
 	void list_supportsPaginationAndFilter() throws Exception {
 		String token = registerAndGetToken("page-filter@example.com", "Secret123!");
+		String workspaceId = defaultWorkspaceId(token);
 
-		createHabit(token, "Drink water");
-		createHabit(token, "Drink coffee");
-		createHabit(token, "Run outside");
+		createHabit(token, workspaceId, "Drink water");
+		createHabit(token, workspaceId, "Drink coffee");
+		createHabit(token, workspaceId, "Run outside");
 
 		mockMvc.perform(get("/api/habits")
+						.param("workspaceId", workspaceId)
 						.param("page", "0")
 						.param("size", "2")
 						.param("q", "drink")
@@ -48,6 +50,7 @@ class HabitPaginationIT {
 				.andExpect(jsonPath("$.size").value(2));
 
 		mockMvc.perform(get("/api/habits")
+						.param("workspaceId", workspaceId)
 						.param("page", "0")
 						.param("size", "10")
 						.param("q", "run")
@@ -73,13 +76,21 @@ class HabitPaginationIT {
 		return JsonPath.read(result.getResponse().getContentAsString(), "$.accessToken");
 	}
 
-	private void createHabit(String token, String title) throws Exception {
+	private String defaultWorkspaceId(String token) throws Exception {
+		MvcResult result = mockMvc.perform(get("/api/workspaces")
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+				.andExpect(status().isOk())
+				.andReturn();
+		return JsonPath.read(result.getResponse().getContentAsString(), "$[0].id");
+	}
+
+	private void createHabit(String token, String workspaceId, String title) throws Exception {
 		mockMvc.perform(post("/api/habits")
 						.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{ "title": "%s" }
-								""".formatted(title)))
+								{ "workspaceId": "%s", "title": "%s" }
+								""".formatted(workspaceId, title)))
 				.andExpect(status().isCreated());
 	}
 }

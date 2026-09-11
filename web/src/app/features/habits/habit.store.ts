@@ -2,12 +2,13 @@ import { inject } from '@angular/core';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, switchMap, tap } from 'rxjs';
+import { EMPTY, pipe, switchMap, tap } from 'rxjs';
 import { ToastService } from '../../core/ui/toast.service';
 import { Habit } from './habit.models';
 import { HabitService } from './habit.service';
 
 export type HabitStoreState = {
+  workspaceId: string | null;
   habits: Habit[];
   loading: boolean;
   creating: boolean;
@@ -18,6 +19,7 @@ export type HabitStoreState = {
 };
 
 const initialState: HabitStoreState = {
+  workspaceId: null,
   habits: [],
   loading: true,
   creating: false,
@@ -56,9 +58,15 @@ export const HabitStore = signalStore(
     const load = rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),
-        switchMap(() =>
-          api
+        switchMap(() => {
+          const workspaceId = store.workspaceId();
+          if (!workspaceId) {
+            patchState(store, { loading: false, habits: [], totalElements: 0 });
+            return EMPTY;
+          }
+          return api
             .list({
+              workspaceId,
               page: store.pageIndex(),
               size: store.pageSize(),
               q: store.filter(),
@@ -76,13 +84,24 @@ export const HabitStore = signalStore(
                   toast.error('Impossible de charger les habitudes.');
                 },
               }),
-            ),
-        ),
+            );
+        }),
       ),
     );
 
     return {
       load,
+
+      /** Hydrate depuis les route/query params (équivalent Next searchParams). */
+      initFromRoute(workspaceId: string, q: string, pageIndex: number, pageSize: number): void {
+        patchState(store, {
+          workspaceId,
+          filter: q,
+          pageIndex,
+          pageSize: pageSize > 0 ? pageSize : 10,
+        });
+        load();
+      },
 
       setFilter(filter: string): void {
         patchState(store, { filter, pageIndex: 0 });
@@ -95,8 +114,12 @@ export const HabitStore = signalStore(
       },
 
       create(title: string, onSuccess?: () => void): void {
+        const workspaceId = store.workspaceId();
+        if (!workspaceId) {
+          return;
+        }
         patchState(store, { creating: true });
-        api.create({ title }).subscribe({
+        api.create({ workspaceId, title }).subscribe({
           next: () => {
             patchState(store, { creating: false, pageIndex: 0 });
             onSuccess?.();
@@ -110,15 +133,14 @@ export const HabitStore = signalStore(
         });
       },
 
-      /** Optimistic : met à jour le streak tout de suite, rollback si l’API échoue. */
-      complete(habit: Habit): void {
+      complete(habit: Habit, note?: string | null): void {
         const previous = habit;
         const optimistic = projectOptimisticComplete(habit);
         patchState(store, {
           habits: store.habits().map((h) => (h.id === habit.id ? optimistic : h)),
         });
 
-        api.complete(habit.id).subscribe({
+        api.complete(habit.id, note).subscribe({
           next: (updated) => {
             patchState(store, {
               habits: store.habits().map((h) => (h.id === updated.id ? updated : h)),
@@ -134,7 +156,6 @@ export const HabitStore = signalStore(
         });
       },
 
-      /** Optimistic : retire la ligne tout de suite, restore si l’API échoue. */
       remove(habit: Habit): void {
         const previousHabits = store.habits();
         const previousTotal = store.totalElements();

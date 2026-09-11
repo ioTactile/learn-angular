@@ -13,7 +13,7 @@ class HabitTest {
 	@Test
 	@DisplayName("première completion → streak 1")
 	void complete_firstTime_setsStreakToOne() {
-		Habit habit = Habit.create(UUID.randomUUID(), "Run");
+		Habit habit = Habit.create(UUID.randomUUID(), UUID.randomUUID(), "Run");
 		LocalDate today = LocalDate.of(2026, 9, 9);
 
 		Habit completed = habit.complete(today);
@@ -26,6 +26,7 @@ class HabitTest {
 	@DisplayName("jour suivant → streak incrémenté")
 	void complete_consecutiveDay_incrementsStreak() {
 		Habit habit = new Habit(
+				UUID.randomUUID(),
 				UUID.randomUUID(),
 				UUID.randomUUID(),
 				"Run",
@@ -46,6 +47,7 @@ class HabitTest {
 		Habit habit = new Habit(
 				UUID.randomUUID(),
 				UUID.randomUUID(),
+				UUID.randomUUID(),
 				"Run",
 				Instant.parse("2026-09-01T00:00:00Z"),
 				4,
@@ -62,6 +64,7 @@ class HabitTest {
 	@DisplayName("jour sauté → streak repart à 1")
 	void complete_afterGap_resetsStreak() {
 		Habit habit = new Habit(
+				UUID.randomUUID(),
 				UUID.randomUUID(),
 				UUID.randomUUID(),
 				"Run",

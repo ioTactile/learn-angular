@@ -18,6 +18,9 @@ class HabitJpaEntity {
 	@Column(name = "owner_id", nullable = false)
 	private UUID ownerId;
 
+	@Column(name = "workspace_id", nullable = false)
+	private UUID workspaceId;
+
 	@Column(nullable = false, length = 120)
 	private String title;
 
@@ -36,6 +39,7 @@ class HabitJpaEntity {
 	HabitJpaEntity(
 			UUID id,
 			UUID ownerId,
+			UUID workspaceId,
 			String title,
 			Instant createdAt,
 			int streak,
@@ -43,6 +47,7 @@ class HabitJpaEntity {
 	) {
 		this.id = id;
 		this.ownerId = ownerId;
+		this.workspaceId = workspaceId;
 		this.title = title;
 		this.createdAt = createdAt;
 		this.streak = streak;
@@ -55,6 +60,10 @@ class HabitJpaEntity {
 
 	UUID getOwnerId() {
 		return ownerId;
+	}
+
+	UUID getWorkspaceId() {
+		return workspaceId;
 	}
 
 	String getTitle() {

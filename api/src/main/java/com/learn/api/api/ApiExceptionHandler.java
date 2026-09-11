@@ -3,6 +3,7 @@ package com.learn.api.api;
 import com.learn.api.domain.habit.HabitNotFoundException;
 import com.learn.api.domain.user.EmailAlreadyRegisteredException;
 import com.learn.api.domain.user.InvalidCredentialsException;
+import com.learn.api.domain.workspace.WorkspaceNotFoundException;
 import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,14 @@ public class ApiExceptionHandler {
 	ProblemDetail handleHabitNotFound(HabitNotFoundException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
 		problem.setTitle("Habit not found");
+		problem.setProperty("timestamp", Instant.now());
+		return problem;
+	}
+
+	@ExceptionHandler(WorkspaceNotFoundException.class)
+	ProblemDetail handleWorkspaceNotFound(WorkspaceNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+		problem.setTitle("Workspace not found");
 		problem.setProperty("timestamp", Instant.now());
 		return problem;
 	}

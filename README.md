@@ -11,6 +11,7 @@ Projet de formation full-stack avec **TDD**, clean architecture, et auth dès le
 | DB | PostgreSQL 16 (Testcontainers en test, Docker Compose en local) |
 | Auth | JWT access (15 min) + refresh opaque (7 j) + BCrypt + rôles USER/ADMIN |
 | Frontend | Angular 21 standalone + signals + Material + NgRx SignalStore + Vitest |
+| Domaine | Workspaces + habits + journal de complétions |
 
 ## Structure
 
@@ -55,10 +56,15 @@ Auth :
 - `POST /api/auth/logout` `{ "refreshToken" }` → `204`, révoque le refresh
 - `GET /api/me` (Bearer) → `{ id, email, role }`
 - `GET /api/admin/users` (ADMIN) → liste des comptes
+- `GET/POST /api/workspaces` → espaces (register crée « Perso »)
+- `GET /api/habits?workspaceId&page&size&q`
+- `GET /api/habits/{id}` + `GET .../completions?from&to`
+- `POST /api/habits/{id}/complete` `{ note? }`
 
 OpenAPI / Swagger UI : `http://localhost:8080/swagger-ui.html`
 
-Habits (Bearer) :
+Front (path + search params) :
 
-- `GET /api/habits?page&size&q` → pagination + filtre
-- `POST /api/habits` / `DELETE` / `POST .../complete`
+- `/workspaces`
+- `/workspaces/:workspaceId?q&page&size`
+- `/workspaces/:workspaceId/habits/:habitId?from&to`

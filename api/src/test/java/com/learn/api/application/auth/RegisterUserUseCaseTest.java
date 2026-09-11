@@ -7,9 +7,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.learn.api.application.workspace.WorkspaceRepository;
 import com.learn.api.domain.user.EmailAlreadyRegisteredException;
 import com.learn.api.domain.user.User;
 import com.learn.api.domain.user.UserRole;
+import com.learn.api.domain.workspace.Workspace;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,19 +32,23 @@ class RegisterUserUseCaseTest {
 	@Mock
 	AuthSessionService sessions;
 
+	@Mock
+	WorkspaceRepository workspaces;
+
 	RegisterUserUseCase useCase;
 
 	@BeforeEach
 	void setUp() {
-		useCase = new RegisterUserUseCase(users, passwordHasher, sessions);
+		useCase = new RegisterUserUseCase(users, passwordHasher, sessions, workspaces);
 	}
 
 	@Test
-	@DisplayName("enregistre un utilisateur et ouvre une session")
+	@DisplayName("enregistre un utilisateur, crée Perso, ouvre une session")
 	void execute_persistsHashedPasswordAndReturnsToken() {
 		when(users.existsByEmail("alice@example.com")).thenReturn(false);
 		when(passwordHasher.hash("Secret123!")).thenReturn("hashed");
 		when(users.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(workspaces.save(any(Workspace.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		when(sessions.openSession(any(User.class)))
 				.thenReturn(AuthTokenResult.bearer("jwt-token", "refresh-token"));
 
@@ -52,11 +58,14 @@ class RegisterUserUseCaseTest {
 		assertThat(result.refreshToken()).isEqualTo("refresh-token");
 		assertThat(result.tokenType()).isEqualTo("Bearer");
 
-		ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-		verify(users).save(captor.capture());
-		assertThat(captor.getValue().email()).isEqualTo("alice@example.com");
-		assertThat(captor.getValue().passwordHash()).isEqualTo("hashed");
-		assertThat(captor.getValue().role()).isEqualTo(UserRole.USER);
+		ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+		verify(users).save(userCaptor.capture());
+		assertThat(userCaptor.getValue().email()).isEqualTo("alice@example.com");
+		assertThat(userCaptor.getValue().role()).isEqualTo(UserRole.USER);
+
+		ArgumentCaptor<Workspace> wsCaptor = ArgumentCaptor.forClass(Workspace.class);
+		verify(workspaces).save(wsCaptor.capture());
+		assertThat(wsCaptor.getValue().name()).isEqualTo("Perso");
 	}
 
 	@Test
@@ -68,5 +77,6 @@ class RegisterUserUseCaseTest {
 				.isInstanceOf(EmailAlreadyRegisteredException.class);
 
 		verify(users, never()).save(any());
+		verify(workspaces, never()).save(any());
 	}
 }

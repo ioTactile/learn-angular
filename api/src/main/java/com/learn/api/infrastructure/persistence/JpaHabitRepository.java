@@ -25,6 +25,7 @@ class JpaHabitRepository implements HabitRepository {
 		HabitJpaEntity entity = new HabitJpaEntity(
 				habit.id(),
 				habit.ownerId(),
+				habit.workspaceId(),
 				habit.title(),
 				habit.createdAt(),
 				habit.streak(),
@@ -46,14 +47,23 @@ class JpaHabitRepository implements HabitRepository {
 		Page<HabitJpaEntity> result = query.isBlank()
 				? jpa.findByOwnerId(ownerId, pageable)
 				: jpa.findByOwnerIdAndTitleContainingIgnoreCase(ownerId, query, pageable);
+		return toPage(result);
+	}
 
-		return new HabitPage(
-				result.getContent().stream().map(this::toDomain).toList(),
-				result.getNumber(),
-				result.getSize(),
-				result.getTotalElements(),
-				result.getTotalPages()
-		);
+	@Override
+	public HabitPage findPageByWorkspaceIdAndOwnerId(
+			UUID workspaceId,
+			UUID ownerId,
+			String query,
+			int page,
+			int size
+	) {
+		var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+		Page<HabitJpaEntity> result = query.isBlank()
+				? jpa.findByWorkspaceIdAndOwnerId(workspaceId, ownerId, pageable)
+				: jpa.findByWorkspaceIdAndOwnerIdAndTitleContainingIgnoreCase(
+						workspaceId, ownerId, query, pageable);
+		return toPage(result);
 	}
 
 	@Override
@@ -66,10 +76,21 @@ class JpaHabitRepository implements HabitRepository {
 		jpa.deleteById(habit.id());
 	}
 
+	private HabitPage toPage(Page<HabitJpaEntity> result) {
+		return new HabitPage(
+				result.getContent().stream().map(this::toDomain).toList(),
+				result.getNumber(),
+				result.getSize(),
+				result.getTotalElements(),
+				result.getTotalPages()
+		);
+	}
+
 	private Habit toDomain(HabitJpaEntity entity) {
 		return new Habit(
 				entity.getId(),
 				entity.getOwnerId(),
+				entity.getWorkspaceId(),
 				entity.getTitle(),
 				entity.getCreatedAt(),
 				entity.getStreak(),

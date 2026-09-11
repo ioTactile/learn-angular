@@ -8,6 +8,7 @@ import { HabitStore, projectOptimisticComplete } from './habit.store';
 describe('projectOptimisticComplete', () => {
   const base: Habit = {
     id: 'h1',
+    workspaceId: 'ws1',
     title: 'Drink water',
     createdAt: '2026-09-09T10:00:00Z',
     streak: 2,
@@ -35,6 +36,7 @@ describe('projectOptimisticComplete', () => {
 describe('HabitStore', () => {
   const habit: Habit = {
     id: 'h1',
+    workspaceId: 'ws1',
     title: 'Drink water',
     createdAt: '2026-09-09T10:00:00Z',
     streak: 0,
@@ -76,32 +78,33 @@ describe('HabitStore', () => {
     });
 
     store = TestBed.inject(HabitStore);
+    store.initFromRoute('ws1', '', 0, 10);
   });
 
-  it('load remplit habits depuis l’API', () => {
-    store.load();
-
-    expect(api.list).toHaveBeenCalledWith({ page: 0, size: 10, q: '' });
+  it('initFromRoute charge les habits du workspace', () => {
+    expect(api.list).toHaveBeenCalledWith({
+      workspaceId: 'ws1',
+      page: 0,
+      size: 10,
+      q: '',
+    });
     expect(store.habits()).toEqual([habit]);
     expect(store.loading()).toBe(false);
-    expect(store.totalElements()).toBe(1);
   });
 
   it('complete applique l’UI optimiste puis confirme avec la réponse serveur', () => {
-    store.load();
     const server = { ...habit, streak: 1, lastCompletedOn: '2026-09-10' };
     api.complete.mockReturnValue(of(server));
 
     store.complete(habit);
 
     expect(store.habits()[0].streak).toBe(1);
-    expect(api.complete).toHaveBeenCalledWith('h1');
+    expect(api.complete).toHaveBeenCalledWith('h1', undefined);
     expect(toast.success).toHaveBeenCalledWith('Complétée — streak 1');
     expect(store.habits()[0]).toEqual(server);
   });
 
   it('complete rollback si l’API échoue', () => {
-    store.load();
     api.complete.mockReturnValue(throwError(() => new Error('boom')));
 
     store.complete(habit);
@@ -111,7 +114,6 @@ describe('HabitStore', () => {
   });
 
   it('remove retire tout de suite et restaure en cas d’erreur', () => {
-    store.load();
     api.delete.mockReturnValue(throwError(() => new Error('boom')));
 
     store.remove(habit);
@@ -122,7 +124,6 @@ describe('HabitStore', () => {
   });
 
   it('remove confirme la suppression sans reload', () => {
-    store.load();
     api.delete.mockReturnValue(of(void 0));
 
     store.remove(habit);

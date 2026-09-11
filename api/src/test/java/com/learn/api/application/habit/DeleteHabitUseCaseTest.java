@@ -33,7 +33,7 @@ class DeleteHabitUseCaseTest {
 	@DisplayName("supprime un habit appartenant au owner")
 	void execute_deletesOwnedHabit() {
 		UUID ownerId = UUID.randomUUID();
-		Habit habit = Habit.create(ownerId, "Run");
+		Habit habit = Habit.create(ownerId, UUID.randomUUID(), "Run");
 		when(habits.findByIdAndOwnerId(habit.id(), ownerId)).thenReturn(Optional.of(habit));
 
 		useCase.execute(habit.id(), ownerId);
